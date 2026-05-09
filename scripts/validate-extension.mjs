@@ -13,10 +13,19 @@ const requiredFiles = [
   "src/shared/storage.js",
   "src/shared/mock-analysis.js",
   "src/shared/extract-product.js",
+  "src/shared/config.js",
+  "src/backend/server.js",
+  "src/backend/validation.js",
+  "src/backend/recommendation-engine.js",
+  "src/backend/prompt-builder.js",
   "tests/fixtures/top-product.html",
   "tests/fixtures/bottom-product.html",
   "tests/fixtures/minimal-product.html",
-  "tests/extract-product.test.mjs"
+  "tests/extract-product.test.mjs",
+  "tests/recommendation-engine.test.mjs",
+  "tests/api-validation.test.mjs",
+  "tests/evidence-service.test.mjs",
+  "src/backend/evidence-service.js"
 ];
 
 for (const file of requiredFiles) {

@@ -24,10 +24,15 @@
  */
 
 export const STORAGE_KEYS = {
+  schemaVersion: "fitcheck:schemaVersion",
+  config: "fitcheck:config",
   userProfile: "fitcheck:userProfile",
   brandNotes: "fitcheck:brandNotes",
-  history: "fitcheck:history"
+  history: "fitcheck:history",
+  analysisResults: "fitcheck:analysisResults"
 };
+
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export const DEFAULT_PROFILE = {
   mode: "lightweight",
@@ -56,6 +61,12 @@ export const EMPTY_BRAND_NOTE = {
   category: "unknown",
   typicalRecommendation: "",
   lastOutcome: "",
+  outcomeCounts: {
+    fit: 0,
+    too_small: 0,
+    too_big: 0,
+    returned: 0
+  },
   notes: "",
   updatedAt: null
 };

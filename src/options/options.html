@@ -15,6 +15,16 @@
 
       <form id="profile-form">
         <section>
+          <h2>Local API</h2>
+          <div class="grid">
+            <label>
+              API URL
+              <input name="apiUrl" autocomplete="off" placeholder="http://localhost:8787">
+            </label>
+          </div>
+        </section>
+
+        <section>
           <h2>Profile mode</h2>
           <div class="segmented">
             <label>
@@ -79,6 +89,34 @@
         <section>
           <h2>Body-fit notes</h2>
           <textarea name="bodyNotes" rows="4" placeholder="Broad shoulders, long torso, wide hips..."></textarea>
+        </section>
+
+        <section>
+          <h2>Brand notes</h2>
+          <div class="grid">
+            <label>
+              Brand
+              <input name="brandNoteBrand" autocomplete="off">
+            </label>
+            <label>
+              Category
+              <select name="brandNoteCategory">
+                <option value="unknown">Unknown</option>
+                <option value="tops">Tops</option>
+                <option value="bottoms">Bottoms</option>
+              </select>
+            </label>
+            <label>
+              Typical recommendation
+              <input name="brandNoteRecommendation" autocomplete="off" placeholder="true to size, size up...">
+            </label>
+            <label>
+              Notes
+              <input name="brandNoteNotes" autocomplete="off" placeholder="Runs small in tops">
+            </label>
+          </div>
+          <button type="button" id="save-brand-note">Save brand note</button>
+          <div class="brand-notes" id="brand-notes"></div>
         </section>
 
         <div class="footer">

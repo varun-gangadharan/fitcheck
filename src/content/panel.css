@@ -275,6 +275,33 @@
   color: #5d6a5f;
 }
 
+.fitcheck-panel__sources {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #dfe5dc;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.fitcheck-panel__sources strong {
+  color: #5d6a5f;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.fitcheck-panel__sources ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.fitcheck-panel__sources a {
+  color: #17201a;
+  text-decoration: underline;
+}
+
 .fitcheck-panel__table-wrap {
   overflow-x: auto;
   border: 1px solid #dfe5dc;

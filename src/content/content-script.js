@@ -163,7 +163,7 @@
     button.disabled = true;
     button.textContent = "Saved";
 
-    await chrome.runtime.sendMessage({
+    const response = await chrome.runtime.sendMessage({
       type: "FITCHECK_SAVE_OUTCOME",
       record: {
         product: state.product,
@@ -171,6 +171,12 @@
         outcome
       }
     });
+
+    if (!response?.ok) {
+      state.error = response?.error || "Could not save outcome.";
+      state.status = "error";
+      rerenderPanel();
+    }
   }
 
   async function saveNote() {
@@ -182,7 +188,7 @@
       return;
     }
 
-    await chrome.runtime.sendMessage({
+    const response = await chrome.runtime.sendMessage({
       type: "FITCHECK_SAVE_OUTCOME",
       record: {
         product: state.product,
@@ -191,6 +197,13 @@
         note
       }
     });
+
+    if (!response?.ok) {
+      state.error = response?.error || "Could not save note.";
+      state.status = "error";
+      rerenderPanel();
+      return;
+    }
 
     state.noteDraft = "";
     state.error = "";
@@ -274,9 +287,9 @@
     const messages = {
       no_product: ["No product detected", "Fitcheck could not find a product title or size options on this page."],
       ready: ["Ready to analyze", "Visible product details were extracted from this page."],
-      loading: ["Analyzing", "Generating a mock recommendation from the extracted product record."],
-      not_enough_evidence: ["Not enough evidence", "The mock result has low confidence because key product signals are missing."],
-      complete: ["Analysis complete", "Mock recommendation is ready."],
+      loading: ["Analyzing", "Sending extracted product data to the local Fitcheck API."],
+      not_enough_evidence: ["Not enough evidence", "The result has low confidence because key product or web evidence is missing."],
+      complete: ["Analysis complete", "Recommendation is ready."],
       error: ["Error", state.error || "Something went wrong."]
     };
     const [title, body] = messages[panelState];
@@ -329,8 +342,27 @@
           <div><dt>Returns</dt><dd>${escapeHtml(product.returnPolicy || "Missing")}</dd></div>
           <div><dt>Missing</dt><dd>${escapeHtml(product.extractedSignals.missingFields.join(", ") || "None")}</dd></div>
         </dl>
+        ${sourceMarkup(state.analysis)}
         ${table ? tableMarkup(table) : `<p>No structured size chart table detected.</p>`}
       </section>
+    `;
+  }
+
+  function sourceMarkup(analysis) {
+    const sources = analysis?.webEvidence?.snippets || [];
+    if (!sources.length) {
+      return `<p>${escapeHtml(analysis?.webEvidence?.reason || "No web evidence sources available.")}</p>`;
+    }
+
+    return `
+      <div class="fitcheck-panel__sources">
+        <strong>Sources</strong>
+        <ul>
+          ${sources.slice(0, 4).map((source) => `
+            <li><a href="${escapeAttribute(source.url)}" target="_blank" rel="noreferrer">${escapeHtml(source.source || "source")}</a></li>
+          `).join("")}
+        </ul>
+      </div>
     `;
   }
 
@@ -398,5 +430,9 @@
       };
       return entities[char];
     });
+  }
+
+  function escapeAttribute(value) {
+    return escapeHtml(value).replace(/`/g, "&#096;");
   }
 })();

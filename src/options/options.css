@@ -129,6 +129,43 @@ button {
   color: #17201a;
 }
 
+.brand-notes {
+  display: grid;
+  gap: 8px;
+}
+
+.brand-notes article {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid #dfe5dc;
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.brand-notes strong,
+.brand-notes span,
+.brand-notes p {
+  display: block;
+}
+
+.brand-notes span,
+.brand-notes p,
+.empty {
+  margin: 3px 0 0;
+  color: #5d6a5f;
+  font-size: 13px;
+}
+
+.brand-notes button,
+#save-brand-note {
+  border-color: #cdd6cc;
+  background: #ffffff;
+  color: #17201a;
+}
+
 #status {
   color: #5d6a5f;
   font-size: 13px;
