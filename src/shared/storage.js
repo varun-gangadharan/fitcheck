@@ -43,8 +43,10 @@ export async function saveConfig(config) {
     ...DEFAULT_CONFIG,
     ...config,
     apiUrl: String(config.apiUrl || DEFAULT_CONFIG.apiUrl).replace(/\/+$/, ""),
+    analysisMode: config.analysisMode || DEFAULT_CONFIG.analysisMode,
     webEvidenceEnabled: Boolean(config.webEvidenceEnabled),
-    searchProvider: config.searchProvider || DEFAULT_CONFIG.searchProvider
+    searchProvider: config.searchProvider || DEFAULT_CONFIG.searchProvider,
+    geminiApiKey: String(config.geminiApiKey ?? DEFAULT_CONFIG.geminiApiKey)
   });
 }
 

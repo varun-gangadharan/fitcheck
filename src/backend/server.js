@@ -1,8 +1,6 @@
 import http from "node:http";
 import { loadEnvFile } from "./env.js";
-import { gatherEvidence } from "./evidence-service.js";
-import { analyzeFit } from "./recommendation-engine.js";
-import { buildAnalysisPrompt } from "./prompt-builder.js";
+import { runAnalysis } from "./analysis-orchestrator.js";
 import { validateAnalyzeRequest } from "./validation.js";
 
 loadEnvFile();
@@ -42,39 +40,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    const webEvidenceEnabled = Boolean(payload.options?.webEvidenceEnabled);
-    const webEvidence = payload.webEvidence || await gatherEvidence(payload.product, {
-      enabled: webEvidenceEnabled,
-      provider: payload.options?.searchProvider || process.env.FITCHECK_SEARCH_PROVIDER || "firecrawl"
-    });
-    const evidenceSignals = payload.evidenceSignals || [
-      ...mockEvidenceSignals(payload.product),
-      ...(webEvidence.signals || [])
-    ];
-    const analysis = analyzeFit({
-      product: payload.product,
-      profile: payload.profile,
-      brandMemory: payload.brandMemory || [],
-      history: payload.history || [],
-      evidenceSignals,
-      webEvidence
-    });
-    const prompt = buildAnalysisPrompt({
-      product: payload.product,
-      profile: payload.profile,
-      brandMemory: payload.brandMemory || [],
-      history: payload.history || [],
-      evidenceSignals
-    });
-
-    sendJson(response, 200, {
-      ...analysis,
-      webEvidence,
-      ai: {
-        mode: process.env.OPENAI_API_KEY ? "configured_not_called" : "rules_only",
-        prompt
-      }
-    });
+    const result = await runAnalysis(payload);
+    sendJson(response, 200, result);
   } catch (error) {
     sendJson(response, error.statusCode || 500, {
       error: error.code || "server_error",
@@ -86,14 +53,6 @@ const server = http.createServer(async (request, response) => {
 server.listen(PORT, HOST, () => {
   console.log(`Fitcheck API listening on http://${HOST}:${PORT}`);
 });
-
-function mockEvidenceSignals(product) {
-  return (product.fitSignals || []).map((signal) => ({
-    type: signal.type,
-    source: "product_page",
-    text: signal.text
-  }));
-}
 
 async function readJson(request) {
   const chunks = [];

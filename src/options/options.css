@@ -197,6 +197,75 @@ button {
   font-size: 13px;
 }
 
+.mode-selector {
+  display: grid;
+  gap: 8px;
+}
+
+.mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #cdd6cc;
+  border-radius: 8px;
+  background: #fbfcf8;
+  cursor: pointer;
+}
+
+.mode-option:has(input:checked) {
+  border-color: #17201a;
+  background: #f0f4ed;
+}
+
+.mode-option input {
+  width: 16px;
+  min-height: 16px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.mode-option div {
+  display: grid;
+  gap: 2px;
+}
+
+.mode-option strong {
+  font-size: 14px;
+}
+
+.mode-option span {
+  color: #5d6a5f;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.gemini-key-row {
+  display: grid;
+  gap: 6px;
+}
+
+.gemini-key-row[hidden] {
+  display: none;
+}
+
+.hint {
+  margin: 0;
+  color: #5d6a5f;
+  font-size: 12px;
+}
+
+.mode-status {
+  margin: 0;
+  color: #5d6a5f;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.mode-status:empty {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;

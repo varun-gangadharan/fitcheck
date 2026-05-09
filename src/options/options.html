@@ -29,10 +29,41 @@
               </select>
             </label>
           </div>
-          <label class="checkbox-row">
-            <input type="checkbox" name="webEvidenceEnabled">
-            Use web evidence during analysis
-          </label>
+        </section>
+
+        <section>
+          <h2>Analysis mode</h2>
+          <div class="mode-selector">
+            <label class="mode-option">
+              <input type="radio" name="analysisMode" value="rules_only">
+              <div>
+                <strong>Rules only</strong>
+                <span>Local rules engine — no network calls, no API key needed.</span>
+              </div>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="analysisMode" value="rules_plus_web">
+              <div>
+                <strong>Rules + web evidence</strong>
+                <span>Rules engine enhanced with web search evidence. Requires a search provider key.</span>
+              </div>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="analysisMode" value="model_assisted">
+              <div>
+                <strong>Model-assisted (Gemini)</strong>
+                <span>Rules + optional web evidence + Gemini model review. Requires a Gemini API key.</span>
+              </div>
+            </label>
+          </div>
+          <div id="gemini-key-row" class="gemini-key-row" hidden>
+            <label>
+              Gemini API key
+              <input name="geminiApiKey" type="password" autocomplete="off" placeholder="AIza...">
+            </label>
+            <p class="hint">Free tier: 15 requests/min with Gemini 2.0 Flash via the Gemini API.</p>
+          </div>
+          <p class="mode-status" id="mode-status"></p>
         </section>
 
         <section>

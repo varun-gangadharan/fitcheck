@@ -14,6 +14,8 @@ const status = document.getElementById("status");
 const clearHistoryButton = document.getElementById("clear-history");
 const saveBrandNoteButton = document.getElementById("save-brand-note");
 const brandNotesContainer = document.getElementById("brand-notes");
+const geminiKeyRow = document.getElementById("gemini-key-row");
+const modeStatus = document.getElementById("mode-status");
 
 init();
 
@@ -21,9 +23,27 @@ async function init() {
   const [profile, config, brandNotes] = await Promise.all([getUserProfile(), getConfig(), getBrandNotes()]);
   fillForm(profile);
   form.elements.apiUrl.value = config.apiUrl;
-  form.elements.webEvidenceEnabled.checked = Boolean(config.webEvidenceEnabled);
   form.elements.searchProvider.value = config.searchProvider || "firecrawl";
+  form.elements.analysisMode.value = config.analysisMode || "rules_only";
+  form.elements.geminiApiKey.value = config.geminiApiKey || "";
+  updateModeUI();
   renderBrandNotes(brandNotes);
+}
+
+for (const radio of form.elements.analysisMode) {
+  radio.addEventListener("change", updateModeUI);
+}
+
+function updateModeUI() {
+  const mode = form.elements.analysisMode.value;
+  geminiKeyRow.hidden = mode !== "model_assisted";
+
+  const labels = {
+    rules_only: "Active: rules engine only, no external calls.",
+    rules_plus_web: "Active: rules engine + web search evidence.",
+    model_assisted: "Active: rules + Gemini model review."
+  };
+  modeStatus.textContent = labels[mode] || "";
 }
 
 form.addEventListener("submit", async (event) => {
@@ -52,11 +72,14 @@ form.addEventListener("submit", async (event) => {
   };
 
   try {
+    const mode = clean(data.get("analysisMode")) || "rules_only";
     await saveUserProfile(profile);
     await saveConfig({
       apiUrl: clean(data.get("apiUrl")),
-      webEvidenceEnabled: data.get("webEvidenceEnabled") === "on",
-      searchProvider: clean(data.get("searchProvider")) || "firecrawl"
+      analysisMode: mode,
+      webEvidenceEnabled: mode === "rules_plus_web" || mode === "model_assisted",
+      searchProvider: clean(data.get("searchProvider")) || "firecrawl",
+      geminiApiKey: clean(data.get("geminiApiKey"))
     });
     setStatus("Profile saved.");
   } catch (_error) {
