@@ -1,0 +1,13 @@
+{
+  "name": "fitcheck",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension MVP for personalized fashion fit recommendations.",
+  "type": "module",
+  "scripts": {
+    "build": "npm run validate",
+    "dev": "npm run validate",
+    "test": "node --test tests/*.test.mjs",
+    "validate": "node scripts/validate-extension.mjs"
+  }
+}

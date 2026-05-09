@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fitcheck Options</title>
+    <link rel="stylesheet" href="./options.css">
+  </head>
+  <body>
+    <main class="options">
+      <header>
+        <p>Fitcheck profile</p>
+        <h1>Preferences and measurements</h1>
+      </header>
+
+      <form id="profile-form">
+        <section>
+          <h2>Profile mode</h2>
+          <div class="segmented">
+            <label>
+              <input type="radio" name="mode" value="lightweight">
+              Lightweight
+            </label>
+            <label>
+              <input type="radio" name="mode" value="exact">
+              Exact
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Usual sizes</h2>
+          <div class="grid">
+            <label>
+              Tops
+              <input name="usualTops" autocomplete="off">
+            </label>
+            <label>
+              Bottoms
+              <input name="usualBottoms" autocomplete="off">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Fit preference</h2>
+          <div class="grid">
+            <label>
+              Tops
+              <select name="fitTops">
+                <option value="snug">Snug</option>
+                <option value="regular">Regular</option>
+                <option value="relaxed">Relaxed</option>
+              </select>
+            </label>
+            <label>
+              Bottoms
+              <select name="fitBottoms">
+                <option value="snug">Snug</option>
+                <option value="regular">Regular</option>
+                <option value="relaxed">Relaxed</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Exact measurements</h2>
+          <div class="grid">
+            <label>Chest/Bust <input name="chestBust" inputmode="decimal"></label>
+            <label>Waist <input name="waist" inputmode="decimal"></label>
+            <label>Hips <input name="hips" inputmode="decimal"></label>
+            <label>Inseam <input name="inseam" inputmode="decimal"></label>
+            <label>Shoulder width <input name="shoulderWidth" inputmode="decimal"></label>
+            <label>Height <input name="height" autocomplete="off"></label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Body-fit notes</h2>
+          <textarea name="bodyNotes" rows="4" placeholder="Broad shoulders, long torso, wide hips..."></textarea>
+        </section>
+
+        <div class="footer">
+          <button type="submit">Save profile</button>
+          <button type="button" id="clear-history">Clear history</button>
+          <span id="status" role="status"></span>
+        </div>
+      </form>
+    </main>
+
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

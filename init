@@ -1,0 +1,266 @@
+# Fitcheck Init
+
+## One-Line Summary
+
+A Chrome extension that analyzes fashion product pages and returns a personalized fit-risk score plus a size recommendation based on the user's measurements, fit preferences, brand history, and web evidence from Reddit and search results.
+
+## Product Goal
+
+Help online fashion shoppers make faster, more confident size decisions by turning size charts, brand quirks, search results, Reddit threads, and personal fit history into one direct recommendation:
+
+> If you want this, buy this.
+
+## Target User
+
+People who already do manual fit research before buying clothes online:
+
+- Compare product size charts.
+- Search Reddit or reviews for sizing opinions.
+- Remember which brands run small, large, or inconsistent.
+- Want a quick size recommendation before checkout.
+
+## MVP Scope
+
+### Included
+
+- Chrome extension only.
+- Utility-panel UI anchored to the current product page.
+- Manual fit profile with two modes:
+  - Exact measurements.
+  - Lightweight profile with usual size and fit preference.
+- Product-page extraction from the active tab.
+- Tops and bottoms support.
+- Web evidence from general search results and Reddit.
+- AI-generated summary with:
+  - Suggested size.
+  - Backup size.
+  - Fit risk.
+  - Explanation.
+  - Confidence.
+- Personal memory that improves recommendations over time.
+- Local storage for profile, history, notes, and analysis results.
+
+### Excluded
+
+- Native mobile app.
+- Full companion website.
+- Marketplace support.
+- Social/community features.
+- Auto-checkout or cart automation.
+- Deep computer vision on photos.
+- Perfect-fit guarantees.
+
+## Core User Flows
+
+### Main Analysis Flow
+
+1. User opens a fashion product page.
+2. Extension detects product context.
+3. User opens the utility panel.
+4. Content script extracts page details.
+5. User selects exact measurements or lightweight profile.
+6. User clicks Analyze.
+7. Backend gathers Reddit and web evidence.
+8. Recommendation engine combines product data, user profile, brand memory, and evidence.
+9. AI returns structured recommendation JSON.
+10. Panel shows the recommendation and saves the result to history.
+
+### Repeat-Use Flow
+
+1. User buys an item.
+2. Later, user marks the outcome:
+   - Fit.
+   - Too small.
+   - Too big.
+   - Returned.
+3. Extension updates brand memory.
+4. Future recommendations incorporate that outcome.
+
+## Information Model
+
+### User Profile
+
+Profile modes:
+
+- Lightweight mode:
+  - Usual size by category.
+  - Fit preference: snug, regular, relaxed.
+  - Body-fit notes, such as broad shoulders, long torso, or wide hips.
+- Exact mode:
+  - Chest or bust.
+  - Waist.
+  - Hips.
+  - Inseam.
+  - Optional shoulder width.
+  - Optional height.
+  - Fit preference by category.
+
+### Brand Memory
+
+- Brand name.
+- Category.
+- Typical recommendation.
+- Past outcome.
+- Notes, such as "runs small in tops."
+
+### Product Record
+
+- URL.
+- Brand.
+- Title.
+- Category.
+- Size chart.
+- Fabric and composition.
+- Return policy, if present.
+- Extracted fit signals.
+
+### Analysis Record
+
+- Suggested size.
+- Backup size.
+- Confidence.
+- Risk score.
+- Explanation.
+- Evidence snippets.
+- Timestamp.
+
+## Recommendation Logic
+
+Use a hybrid system:
+
+- Rule layer for obvious signals and deterministic adjustments.
+- AI layer for synthesis, explanation, and evidence summarization.
+
+Rule examples:
+
+- Raise risk if the user previously returned this brand or category.
+- Raise risk if evidence repeatedly says the brand runs small.
+- Raise risk if the size chart is sparse, missing, or inconsistent.
+- Bias one size up if past purchases show the user prefers looser fits.
+- Reduce risk if multiple sources say the brand is true to size.
+
+Output should be direct and shopping-native:
+
+- "If you want this, buy M."
+- "If you want a more relaxed fit, buy L."
+- "If you're between sizes, pick up."
+
+## Technical Architecture
+
+### Chrome Extension
+
+- Content script:
+  - Reads the current page DOM.
+  - Extracts product info, size chart data, fabric, return policy, and visible fit signals.
+- Utility panel:
+  - Floating side panel anchored to the active product page.
+  - Shows product context, fit score, recommendation, explanation, evidence, and feedback controls.
+- Popup:
+  - Quick access to Analyze, profile status, and settings.
+- Options page:
+  - Edit profile, measurements, preferences, and saved notes.
+- Storage:
+  - Use `chrome.storage.local` for profile, history, notes, and results.
+  - Consider `chrome.storage.sync` later for small preferences only.
+
+### Backend
+
+- Analyze endpoint:
+  - Accepts product data, user profile, and history.
+  - Returns structured recommendation JSON.
+- Search service:
+  - Queries Reddit and general web search for sizing evidence.
+- Evidence parser:
+  - Extracts signals like runs small, runs large, true to size, size up, and size down.
+- Recommendation engine:
+  - Combines rules, user memory, size chart mapping, evidence, and AI synthesis.
+- Database:
+  - Stores brand memory and user history when remote persistence is introduced.
+
+## Data Flow
+
+1. Content script extracts product data.
+2. Extension sends product data plus user profile to backend.
+3. Backend fetches and parses external evidence.
+4. Recommendation engine scores risk and chooses sizes.
+5. AI generates structured recommendation JSON.
+6. Extension renders the result.
+7. User feedback is saved locally and optionally synced remotely later.
+
+## AI And Search Strategy
+
+Search queries should include:
+
+- `{brand} {item type} runs small`
+- `{brand} {category} size up`
+- `{brand} true to size`
+- `{brand} fit thread`
+- `{brand} sizing reddit`
+
+The AI must not guess blindly. It should:
+
+- Summarize available evidence.
+- Map exact measurements to the product size chart when present.
+- Incorporate lightweight sizing preferences when exact measurements are absent.
+- Incorporate brand memory and past outcomes.
+- Return a recommendation with calibrated confidence.
+
+## MVP UI
+
+Panel layout:
+
+- Header:
+  - Product name.
+  - Brand.
+- Top:
+  - Fit score or risk dial.
+- Middle:
+  - Recommended size.
+  - Backup size.
+- Bottom:
+  - Short explanation.
+  - Evidence snippets.
+- Footer:
+  - Save note.
+  - Mark outcome.
+  - Expand details.
+
+States:
+
+- No data yet.
+- Not enough evidence.
+- High confidence.
+- History-based recommendation.
+- Exact-measurement mode.
+- Lightweight mode.
+
+## Success Criteria
+
+- User can get a recommendation in under 10 seconds on a product page.
+- User understands why the recommendation was made.
+- User can save a fit outcome in one click.
+- Recommendations improve after 3 to 5 logged purchases.
+- Extension feels useful without setup every time.
+
+## Risks
+
+- Search noise can mislead recommendations.
+- Fashion sites have messy and inconsistent DOM structures.
+- Overconfident predictions can damage user trust.
+- Heavy onboarding can reduce usage.
+- Scraping must stay limited and careful.
+
+## Initial Build Checklist
+
+1. Scaffold Chrome extension with content script, side panel, popup, options page, and local storage helpers.
+2. Define shared TypeScript types for user profile, product record, brand memory, analysis record, and recommendation response.
+3. Build product extraction heuristics for brand, title, price, category, fabric, size chart, and return policy.
+4. Build local profile editor with lightweight and exact modes.
+5. Implement side panel analysis UI with loading, success, error, and low-evidence states.
+6. Add local history and one-click outcome feedback.
+7. Create backend analyze endpoint.
+8. Add search service abstraction for Reddit and web search providers.
+9. Implement evidence parser and rule-based risk scoring.
+10. Add AI synthesis that returns strict JSON.
+11. Wire extension to backend and persist analysis results locally.
+12. Test on representative product pages for tops and bottoms.

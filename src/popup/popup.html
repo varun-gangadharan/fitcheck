@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fitcheck</title>
+    <link rel="stylesheet" href="./popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header>
+        <div>
+          <p>Fitcheck</p>
+          <h1>Size recommendation</h1>
+        </div>
+        <span id="page-state">Checking</span>
+      </header>
+
+      <section class="product" id="product-card">
+        <p class="muted">Active page</p>
+        <strong id="product-title">No product detected yet</strong>
+        <span id="product-brand"></span>
+      </section>
+
+      <section class="actions">
+        <button type="button" id="open-panel">Open panel</button>
+        <button type="button" id="open-options">Profile</button>
+      </section>
+
+      <p class="status" id="status" role="status"></p>
+    </main>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

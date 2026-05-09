@@ -1,0 +1,311 @@
+#fitcheck-panel-root {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  width: min(392px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  box-sizing: border-box;
+  border: 1px solid #d9ded8;
+  border-radius: 8px;
+  background: #fbfcf8;
+  color: #17201a;
+  box-shadow: 0 18px 60px rgba(21, 31, 25, 0.22);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.35;
+}
+
+#fitcheck-panel-root * {
+  box-sizing: border-box;
+  font-family: inherit;
+  letter-spacing: 0;
+}
+
+.fitcheck-panel__header,
+.fitcheck-panel__footer,
+.fitcheck-panel__details,
+.fitcheck-panel__note {
+  padding: 14px;
+}
+
+.fitcheck-panel__header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__header h2 {
+  margin: 2px 0 0;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.fitcheck-panel__eyebrow,
+.fitcheck-panel__recommendation p,
+.fitcheck-panel__score span {
+  margin: 0;
+  color: #5d6a5f;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fitcheck-icon-button {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1d7d0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17201a;
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.fitcheck-panel__meta {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__meta span {
+  padding: 4px 8px;
+  border: 1px solid #d9ded8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #465249;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fitcheck-panel__state {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e3e7e1;
+  background: #eef3ed;
+}
+
+.fitcheck-panel__state strong {
+  font-size: 13px;
+}
+
+.fitcheck-panel__state span {
+  color: #465249;
+  font-size: 12px;
+}
+
+.fitcheck-panel__state--error {
+  background: #fff0ec;
+}
+
+.fitcheck-panel__state--error span {
+  color: #8a2d1c;
+}
+
+.fitcheck-panel__state--not_enough_evidence {
+  background: #fff8e8;
+}
+
+.fitcheck-panel__score {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__score div {
+  display: grid;
+  gap: 2px;
+  padding: 14px;
+}
+
+.fitcheck-panel__score div + div {
+  border-left: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__score strong {
+  font-size: 24px;
+}
+
+.fitcheck-panel__recommendation {
+  padding: 14px;
+  border-bottom: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__recommendation strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 30px;
+}
+
+.fitcheck-panel__recommendation span {
+  display: block;
+  margin-top: 2px;
+  color: #465249;
+  font-size: 13px;
+}
+
+.fitcheck-panel__details {
+  color: #243027;
+  font-size: 13px;
+}
+
+.fitcheck-panel__details p {
+  margin: 0 0 10px;
+}
+
+.fitcheck-panel__details ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.fitcheck-panel__details li + li {
+  margin-top: 6px;
+}
+
+.fitcheck-panel__details dl,
+.fitcheck-panel__expanded dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.fitcheck-panel__details div,
+.fitcheck-panel__expanded div {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 8px;
+}
+
+.fitcheck-panel__details dt,
+.fitcheck-panel__expanded dt {
+  color: #5d6a5f;
+  font-weight: 800;
+}
+
+.fitcheck-panel__details dd,
+.fitcheck-panel__expanded dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fitcheck-panel__outcomes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.fitcheck-panel__note {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__note label {
+  color: #5d6a5f;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fitcheck-panel__note textarea {
+  width: 100%;
+  min-height: 52px;
+  resize: vertical;
+  border: 1px solid #cdd6cc;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+  color: #17201a;
+  font-size: 13px;
+}
+
+.fitcheck-panel__footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-top: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__footer .fitcheck-primary-button {
+  grid-column: 1 / -1;
+}
+
+.fitcheck-panel__outcomes button,
+.fitcheck-panel__footer button {
+  min-height: 36px;
+  border: 1px solid #cdd6cc;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #17201a;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fitcheck-panel__footer .fitcheck-primary-button {
+  border-color: #17201a;
+  background: #17201a;
+  color: #ffffff;
+}
+
+.fitcheck-panel__footer button:disabled,
+.fitcheck-panel__outcomes button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.fitcheck-panel__expanded {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e7e1;
+}
+
+.fitcheck-panel__expanded p {
+  margin: 0;
+  color: #5d6a5f;
+}
+
+.fitcheck-panel__table-wrap {
+  overflow-x: auto;
+  border: 1px solid #dfe5dc;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.fitcheck-panel__table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.fitcheck-panel__table-wrap th,
+.fitcheck-panel__table-wrap td {
+  padding: 7px;
+  border-bottom: 1px solid #e9ede7;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fitcheck-panel__table-wrap th {
+  color: #5d6a5f;
+  font-weight: 800;
+}
+
+@media (max-width: 520px) {
+  #fitcheck-panel-root {
+    top: 12px;
+    right: 12px;
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+}
