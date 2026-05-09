@@ -111,7 +111,7 @@ test("web evidence changes risk and appears in evidence snippets", () => {
     profile: baseProfile,
     webEvidence: {
       status: "ok",
-      summary: ["runsSmall: 2 snippets"],
+      summary: ["2 sources suggest sizing up or that it runs small."],
       snippets: [
         {
           source: "reddit",
@@ -133,7 +133,8 @@ test("web evidence changes risk and appears in evidence snippets", () => {
 
   assert.equal(analysis.suggestedSize, "L");
   assert.ok(analysis.riskScore > 30);
-  assert.ok(analysis.evidenceSnippets.some((snippet) => snippet.includes("reddit")));
+  assert.ok(analysis.evidenceSnippets.some((snippet) => snippet.includes("Reddit")));
+  assert.ok(analysis.evidenceSnippets.some((snippet) => snippet.includes("sizing up")));
 });
 
 test("prompt builder requests strict JSON and includes context", () => {

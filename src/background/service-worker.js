@@ -46,7 +46,11 @@ async function analyzeProduct(product) {
       product,
       profile,
       brandMemory,
-      history
+      history,
+      options: {
+        webEvidenceEnabled: Boolean(config.webEvidenceEnabled),
+        searchProvider: config.searchProvider || "firecrawl"
+      }
     });
 
     await addHistoryRecord({

@@ -75,14 +75,22 @@ header p,
 }
 
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 38px;
+  padding: 0 12px;
   border: 1px solid #cdd6cc;
   border-radius: 8px;
+  appearance: none;
   background: #ffffff;
   color: #17201a;
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 #open-panel {

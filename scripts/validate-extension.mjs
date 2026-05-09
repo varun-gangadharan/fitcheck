@@ -15,6 +15,7 @@ const requiredFiles = [
   "src/shared/extract-product.js",
   "src/shared/config.js",
   "src/backend/server.js",
+  "src/backend/env.js",
   "src/backend/validation.js",
   "src/backend/recommendation-engine.js",
   "src/backend/prompt-builder.js",

@@ -1,8 +1,11 @@
 import http from "node:http";
+import { loadEnvFile } from "./env.js";
 import { gatherEvidence } from "./evidence-service.js";
 import { analyzeFit } from "./recommendation-engine.js";
 import { buildAnalysisPrompt } from "./prompt-builder.js";
 import { validateAnalyzeRequest } from "./validation.js";
+
+loadEnvFile();
 
 const PORT = Number.parseInt(process.env.FITCHECK_API_PORT || "8787", 10);
 const HOST = process.env.FITCHECK_API_HOST || "127.0.0.1";
@@ -39,7 +42,11 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    const webEvidence = payload.webEvidence || await gatherEvidence(payload.product);
+    const webEvidenceEnabled = Boolean(payload.options?.webEvidenceEnabled);
+    const webEvidence = payload.webEvidence || await gatherEvidence(payload.product, {
+      enabled: webEvidenceEnabled,
+      provider: payload.options?.searchProvider || process.env.FITCHECK_SEARCH_PROVIDER || "firecrawl"
+    });
     const evidenceSignals = payload.evidenceSignals || [
       ...mockEvidenceSignals(payload.product),
       ...(webEvidence.signals || [])

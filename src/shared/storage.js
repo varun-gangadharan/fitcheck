@@ -42,7 +42,9 @@ export async function saveConfig(config) {
   return setValue(STORAGE_KEYS.config, {
     ...DEFAULT_CONFIG,
     ...config,
-    apiUrl: String(config.apiUrl || DEFAULT_CONFIG.apiUrl).replace(/\/+$/, "")
+    apiUrl: String(config.apiUrl || DEFAULT_CONFIG.apiUrl).replace(/\/+$/, ""),
+    webEvidenceEnabled: Boolean(config.webEvidenceEnabled),
+    searchProvider: config.searchProvider || DEFAULT_CONFIG.searchProvider
   });
 }
 

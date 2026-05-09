@@ -342,7 +342,7 @@
           <div><dt>Returns</dt><dd>${escapeHtml(product.returnPolicy || "Missing")}</dd></div>
           <div><dt>Missing</dt><dd>${escapeHtml(product.extractedSignals.missingFields.join(", ") || "None")}</dd></div>
         </dl>
-        ${sourceMarkup(state.analysis)}
+        ${state.analysis ? sourceMarkup(state.analysis) : ""}
         ${table ? tableMarkup(table) : `<p>No structured size chart table detected.</p>`}
       </section>
     `;
@@ -351,7 +351,11 @@
   function sourceMarkup(analysis) {
     const sources = analysis?.webEvidence?.snippets || [];
     if (!sources.length) {
-      return `<p>${escapeHtml(analysis?.webEvidence?.reason || "No web evidence sources available.")}</p>`;
+      const status = analysis?.webEvidence?.status;
+      if (status === "ok") {
+        return `<p>Web evidence was available, but no source links were returned.</p>`;
+      }
+      return `<p>${escapeHtml(analysis?.webEvidence?.reason || "Web evidence is off or unavailable.")}</p>`;
     }
 
     return `
@@ -359,7 +363,7 @@
         <strong>Sources</strong>
         <ul>
           ${sources.slice(0, 4).map((source) => `
-            <li><a href="${escapeAttribute(source.url)}" target="_blank" rel="noreferrer">${escapeHtml(source.source || "source")}</a></li>
+            <li><a href="${escapeAttribute(source.url)}" target="_blank" rel="noreferrer">${escapeHtml(sourceLabel(source.source))}</a></li>
           `).join("")}
         </ul>
       </div>
@@ -430,6 +434,11 @@
       };
       return entities[char];
     });
+  }
+
+  function sourceLabel(source) {
+    if (source === "reddit") return "Reddit";
+    return source || "Source";
   }
 
   function escapeAttribute(value) {

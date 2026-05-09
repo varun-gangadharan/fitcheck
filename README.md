@@ -35,13 +35,13 @@ npm run api
 
 The API listens at `http://localhost:8787` by default and exposes `POST /analyze`. You can change the extension's API URL from the Fitcheck options page. The API runs rules-only unless an AI integration is added later; `OPENAI_API_KEY` is not required.
 
-Optional web evidence uses Brave Search if configured:
+Web evidence is off by default. To use Firecrawl, enable **Use web evidence during analysis** on the Fitcheck options page and run the API with a Firecrawl key:
 
 ```bash
-BRAVE_SEARCH_API_KEY=your_key npm run api
+FIRECRAWL_API_KEY=your_key npm run api
 ```
 
-If no search provider is configured, `/analyze` returns a clear `webEvidence.status` of `not_configured` and still produces a rules-only recommendation from extracted page data, profile, history, and brand memory.
+If web evidence is off, `/analyze` returns `webEvidence.status: "disabled"` and still produces a rules-only recommendation. If web evidence is on but no provider key is configured, it returns `webEvidence.status: "not_configured"`.
 
 ## Local Persistence
 

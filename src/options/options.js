@@ -21,6 +21,8 @@ async function init() {
   const [profile, config, brandNotes] = await Promise.all([getUserProfile(), getConfig(), getBrandNotes()]);
   fillForm(profile);
   form.elements.apiUrl.value = config.apiUrl;
+  form.elements.webEvidenceEnabled.checked = Boolean(config.webEvidenceEnabled);
+  form.elements.searchProvider.value = config.searchProvider || "firecrawl";
   renderBrandNotes(brandNotes);
 }
 
@@ -52,7 +54,9 @@ form.addEventListener("submit", async (event) => {
   try {
     await saveUserProfile(profile);
     await saveConfig({
-      apiUrl: clean(data.get("apiUrl"))
+      apiUrl: clean(data.get("apiUrl")),
+      webEvidenceEnabled: data.get("webEvidenceEnabled") === "on",
+      searchProvider: clean(data.get("searchProvider")) || "firecrawl"
     });
     setStatus("Profile saved.");
   } catch (_error) {

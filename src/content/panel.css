@@ -54,16 +54,21 @@
 }
 
 .fitcheck-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
   width: 32px;
   height: 32px;
+  padding: 0;
   border: 1px solid #d1d7d0;
   border-radius: 8px;
+  appearance: none;
   background: #ffffff;
   color: #17201a;
   cursor: pointer;
   font-size: 22px;
-  line-height: 1;
+  line-height: 32px;
 }
 
 .fitcheck-panel__meta {
@@ -240,14 +245,22 @@
 
 .fitcheck-panel__outcomes button,
 .fitcheck-panel__footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 36px;
+  padding: 0 12px;
   border: 1px solid #cdd6cc;
   border-radius: 8px;
+  appearance: none;
   background: #ffffff;
   color: #17201a;
   cursor: pointer;
   font-size: 12px;
   font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .fitcheck-panel__footer .fitcheck-primary-button {

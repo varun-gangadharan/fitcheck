@@ -21,7 +21,18 @@
               API URL
               <input name="apiUrl" autocomplete="off" placeholder="http://localhost:8787">
             </label>
+            <label>
+              Search provider
+              <select name="searchProvider">
+                <option value="firecrawl">Firecrawl</option>
+                <option value="brave">Brave Search</option>
+              </select>
+            </label>
           </div>
+          <label class="checkbox-row">
+            <input type="checkbox" name="webEvidenceEnabled">
+            Use web evidence during analysis
+          </label>
         </section>
 
         <section>

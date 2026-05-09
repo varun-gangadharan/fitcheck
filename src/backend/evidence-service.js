@@ -13,12 +13,16 @@ const SIGNAL_PATTERNS = [
 ];
 
 export async function gatherEvidence(product, options = {}) {
-  const provider = options.provider || process.env.FITCHECK_SEARCH_PROVIDER || "brave";
-  const apiKey = options.apiKey || process.env.BRAVE_SEARCH_API_KEY || "";
+  const provider = options.provider || process.env.FITCHECK_SEARCH_PROVIDER || "firecrawl";
+  const apiKey = options.apiKey || providerApiKey(provider);
   const queries = buildSearchQueries(product);
 
+  if (!options.enabled) {
+    return emptyEvidence("Web evidence is turned off in Fitcheck settings.", queries, "disabled");
+  }
+
   if (!apiKey || provider === "none") {
-    return emptyEvidence("No search provider is configured.", queries);
+    return emptyEvidence(`No ${provider} search provider API key is configured.`, queries, "not_configured");
   }
 
   if (isRateLimited()) {
@@ -92,7 +96,7 @@ export function classifyEvidence(snippets) {
   if (!signals.length) {
     return {
       signals: [{ signal: "insufficientEvidence", type: "insufficient_evidence", text: "No sizing signal found in search snippets." }],
-      summary: ["Search returned snippets, but none had clear sizing language."]
+      summary: ["Search found sources, but none had clear sizing language."]
     };
   }
 
@@ -116,20 +120,40 @@ export function classifyEvidence(snippets) {
 
 function buildEvidenceSummary(counts, signals) {
   const summary = [];
-  for (const [signal, count] of counts.entries()) {
-    summary.push(`${signal}: ${count} snippet${count === 1 ? "" : "s"}`);
+  const count = (name) => counts.get(name) || 0;
+
+  if (count("trueToSize")) {
+    summary.push(`${count("trueToSize")} source${count("trueToSize") === 1 ? "" : "s"} say true to size.`);
+  }
+  if (count("runsSmall") || count("sizeUp")) {
+    const total = count("runsSmall") + count("sizeUp");
+    summary.push(`${total} source${total === 1 ? "" : "s"} suggest sizing up or that it runs small.`);
+  }
+  if (count("runsLarge") || count("sizeDown")) {
+    const total = count("runsLarge") + count("sizeDown");
+    summary.push(`${total} source${total === 1 ? "" : "s"} suggest sizing down or that it runs large.`);
   }
   if (signals.some((signal) => signal.signal === "inconsistent")) {
-    summary.push("inconsistent: conflicting sizing claims detected");
+    summary.push("Sizing evidence is mixed across sources.");
   }
   return summary;
 }
 
 async function searchProvider({ provider, apiKey, query }) {
+  if (provider === "firecrawl") {
+    return searchFirecrawl({ apiKey, query });
+  }
+
+  if (provider === "brave") {
+    return searchBrave({ apiKey, query });
+  }
+
   if (provider !== "brave") {
     return [];
   }
+}
 
+async function searchBrave({ apiKey, query }) {
   noteSearch();
   const url = new URL("https://api.search.brave.com/res/v1/web/search");
   url.searchParams.set("q", query);
@@ -156,10 +180,49 @@ async function searchProvider({ provider, apiKey, query }) {
   }));
 }
 
+async function searchFirecrawl({ apiKey, query }) {
+  noteSearch();
+  const response = await fetch("https://api.firecrawl.dev/v2/search", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      query,
+      limit: 5,
+      sources: ["web"],
+      country: "US",
+      timeout: 30000
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Firecrawl search failed with ${response.status}.`);
+  }
+
+  const body = await response.json();
+  if (body.success === false) {
+    throw new Error(body.error || "Firecrawl search failed.");
+  }
+
+  return (body.data?.web || []).map((result) => ({
+    title: clean(result.title),
+    snippet: clean(result.description || result.markdown),
+    url: result.url,
+    source: sourceFromUrl(result.url)
+  }));
+}
+
 function compactSnippets(results) {
   const seen = new Set();
   return results
-    .filter((result) => result.url && result.snippet)
+    .map((result) => ({
+      ...result,
+      title: cleanResultText(result.title),
+      snippet: cleanResultText(result.snippet)
+    }))
+    .filter((result) => result.url && result.snippet && isUsefulEvidenceResult(result))
     .filter((result) => {
       const key = `${result.url}:${result.snippet}`;
       if (seen.has(key)) return false;
@@ -169,9 +232,15 @@ function compactSnippets(results) {
     .slice(0, 12);
 }
 
-function emptyEvidence(reason, queries) {
+function isUsefulEvidenceResult(result) {
+  const text = `${result.title} ${result.snippet}`.toLowerCase();
+  if (/youtube|video|products?\)|shop classic|new arrivals|sale/.test(text)) return false;
+  return /size|sizing|fit|fits|runs|tts|small|large|review|reddit|forum/.test(text);
+}
+
+function emptyEvidence(reason, queries, status = "not_configured") {
   return {
-    status: "not_configured",
+    status,
     reason,
     provider: "none",
     queries,
@@ -180,6 +249,12 @@ function emptyEvidence(reason, queries) {
     summary: [reason],
     cache: { hit: false, ttlMs: CACHE_TTL_MS }
   };
+}
+
+function providerApiKey(provider) {
+  if (provider === "firecrawl") return process.env.FIRECRAWL_API_KEY || "";
+  if (provider === "brave") return process.env.BRAVE_SEARCH_API_KEY || "";
+  return "";
 }
 
 function isRateLimited() {
@@ -214,4 +289,11 @@ function sourceFromUrl(value) {
 
 function clean(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function cleanResultText(value) {
+  return clean(value)
+    .replace(/\s*[-|]\s*(Reddit|YouTube|TikTok|Pinterest)$/i, "")
+    .replace(/https?:\/\/\S+/g, "")
+    .slice(0, 220);
 }

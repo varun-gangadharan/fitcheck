@@ -206,25 +206,37 @@ function adjacentSize(size, availableSizes, direction) {
 }
 
 function buildExplanation(product, suggestedSize, backupSize, signals) {
-  const topSignals = signals.ruleSignals.slice(0, 3).map((signal) => signal.message).join(" ");
+  const topSignals = signals.ruleSignals
+    .filter((signal) => !["insufficient_web_evidence"].includes(signal.id))
+    .slice(0, 3)
+    .map((signal) => signal.message)
+    .join(" ");
   return `If you want this ${product.category === "unknown" ? "item" : product.category.slice(0, -1)}, buy ${suggestedSize}. Backup size: ${backupSize}. ${topSignals}`;
 }
 
 function buildEvidenceSnippets(product, signals) {
   const snippets = [
     product.sizeChart?.tables?.length
-      ? `Size chart table detected with ${product.sizeChart.tables[0].rows.length} rows.`
+      ? `Size chart found with ${product.sizeChart.tables[0].rows.length} rows.`
       : "No structured size chart table detected.",
     product.fitSignals?.length
-      ? `Extracted fit language: ${product.fitSignals.map((signal) => signal.label).join(", ")}.`
+      ? `Product page fit language: ${product.fitSignals.map((signal) => signal.label).join(", ")}.`
       : "No visible fit-language signals extracted.",
     ...(signals.webEvidence?.summary || []),
     ...(signals.webEvidence?.snippets || []).slice(0, 3).map((snippet) =>
-      `${snippet.source}: ${snippet.snippet}`
+      `${sourceLabel(snippet.source)}: ${snippet.snippet}`
     ),
-    ...signals.ruleSignals.slice(0, 4).map((signal) => signal.message)
+    ...signals.ruleSignals
+      .filter((signal) => !["insufficient_web_evidence"].includes(signal.id))
+      .slice(0, 4)
+      .map((signal) => signal.message)
   ];
-  return Array.from(new Set(snippets));
+  return Array.from(new Set(snippets)).filter(Boolean).slice(0, 8);
+}
+
+function sourceLabel(source) {
+  if (source === "reddit") return "Reddit";
+  return source || "Source";
 }
 
 function normalizeSignalTypes(values) {
