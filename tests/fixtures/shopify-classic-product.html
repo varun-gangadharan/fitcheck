@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta property="og:title" content="Essential Crew Tee – White">
+  <meta property="og:type" content="product">
+  <meta property="og:site_name" content="REPRESENT">
+  <meta name="twitter:title" content="Essential Crew Tee – White | REPRESENT">
+  <title>Essential Crew Tee – White – REPRESENT</title>
+</head>
+<body>
+  <h1 class="product__title">Essential Crew Tee – White</h1>
+
+  <!-- Shopify classic theme: radio buttons for size selection -->
+  <fieldset class="product-form__input product-form__input--pill">
+    <legend>Size</legend>
+    <input type="radio" name="Size" id="s-S" value="S" form="product-form">
+    <label for="s-S">S</label>
+    <input type="radio" name="Size" id="s-M" value="M" form="product-form">
+    <label for="s-M">M</label>
+    <input type="radio" name="Size" id="s-L" value="L" form="product-form">
+    <label for="s-L">L</label>
+    <input type="radio" name="Size" id="s-XL" value="XL" form="product-form">
+    <label for="s-XL">XL</label>
+    <input type="radio" name="Size" id="s-XXL" value="XXL" form="product-form">
+    <label for="s-XXL">XXL</label>
+  </fieldset>
+
+  <form id="product-form" action="/cart/add" method="post">
+    <button type="submit" name="add" class="product-form__submit button button--full-width button--primary">
+      Add to cart
+    </button>
+  </form>
+
+  <div class="product__description">
+    <p>True to size. 100% heavyweight cotton, 260gsm. Oversized boxy fit.</p>
+    <p>Returns accepted within 14 days of delivery.</p>
+  </div>
+
+  <!-- Shopify product JSON (classic theme) -->
+  <script type="application/json" id="ProductJson-product-template">
+    {
+      "id": 7654321,
+      "title": "Essential Crew Tee \u2013 White",
+      "vendor": "REPRESENT",
+      "variants": [
+        { "id": 111, "title": "S", "option1": "S", "available": true },
+        { "id": 222, "title": "M", "option1": "M", "available": true },
+        { "id": 333, "title": "L", "option1": "L", "available": true },
+        { "id": 444, "title": "XL", "option1": "XL", "available": true },
+        { "id": 555, "title": "XXL", "option1": "XXL", "available": false }
+      ]
+    }
+  </script>
+
+  <table class="size-chart__table">
+    <thead>
+      <tr>
+        <th>Size</th><th>Chest</th><th>Length</th><th>Shoulder</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>S</td><td>19"</td><td>27"</td><td>17"</td></tr>
+      <tr><td>M</td><td>20.5"</td><td>28"</td><td>18"</td></tr>
+      <tr><td>L</td><td>22"</td><td>29"</td><td>19"</td></tr>
+      <tr><td>XL</td><td>23.5"</td><td>30"</td><td>20"</td></tr>
+      <tr><td>XXL</td><td>25"</td><td>31"</td><td>21"</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

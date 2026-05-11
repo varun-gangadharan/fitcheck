@@ -23,6 +23,7 @@ async function init() {
   const [profile, config, brandNotes] = await Promise.all([getUserProfile(), getConfig(), getBrandNotes()]);
   fillForm(profile);
   form.elements.apiUrl.value = config.apiUrl;
+  form.elements.apiToken.value = config.apiToken || "";
   form.elements.searchProvider.value = config.searchProvider || "firecrawl";
   form.elements.analysisMode.value = config.analysisMode || "rules_only";
   updateModeUI();
@@ -75,6 +76,7 @@ form.addEventListener("submit", async (event) => {
     await saveUserProfile(profile);
     await saveConfig({
       apiUrl: clean(data.get("apiUrl")),
+      apiToken: clean(data.get("apiToken")),
       analysisMode: mode,
       webEvidenceEnabled: mode === "rules_plus_web" || mode === "model_assisted",
       searchProvider: clean(data.get("searchProvider")) || "firecrawl",
@@ -83,6 +85,15 @@ form.addEventListener("submit", async (event) => {
     setStatus("Profile saved.");
   } catch (_error) {
     setStatus("Could not save profile locally.");
+    return;
+  }
+
+  // Add a welcome message if this is the first save (the popup uses this to
+  // hide the setup banner).
+  const existing = await chrome.storage.local.get("fitcheck:onboarded");
+  if (!existing["fitcheck:onboarded"]) {
+    await chrome.storage.local.set({ "fitcheck:onboarded": true });
+    setStatus("Profile saved. You're all set — open Fitcheck on any product page.");
   }
 });
 

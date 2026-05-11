@@ -15,11 +15,16 @@
 
       <form id="profile-form">
         <section>
-          <h2>Local API</h2>
+          <h2>API connection</h2>
           <div class="grid">
             <label>
               API URL
               <input name="apiUrl" autocomplete="off" placeholder="http://localhost:8787">
+            </label>
+            <label>
+              API token
+              <input name="apiToken" type="password" autocomplete="off" placeholder="fck_...">
+              <span class="field-hint">Required when using a shared or hosted API. Leave blank for a local server with no auth.</span>
             </label>
             <label>
               Search provider

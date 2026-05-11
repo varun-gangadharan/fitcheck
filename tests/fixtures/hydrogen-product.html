@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IONGAF | SLUTTIER BASIC RED</title>
+  <!-- No og:* meta tags — Hydrogen stores often skip these -->
+</head>
+<body>
+  <!-- React-rendered header with brand -->
+  <header>
+    <a class="brand-logo" href="/">IONGAF</a>
+  </header>
+
+  <!-- React-rendered product title (no og:title, no itemprop) -->
+  <h1 class="product__title">SLUTTIER BASIC RED</h1>
+
+  <!-- Price element (detects product page even without add-to-cart) -->
+  <span class="product__price" data-price="4400">$44.00 USD</span>
+
+  <!-- React-rendered size buttons — no name/aria-label on parent, just value attr -->
+  <div class="product-options">
+    <legend>Size</legend>
+    <button type="button" class="size-option" value="S">S</button>
+    <button type="button" class="size-option" value="M">M</button>
+    <button type="button" class="size-option" value="L">L</button>
+    <button type="button" class="size-option" value="XL">XL</button>
+  </div>
+
+  <!-- Div-based measurement table (no <table> element) -->
+  <section class="size-chart">
+    <h3>Size Guide</h3>
+    <div class="size-chart__row">
+      <span>Measurement</span><span>S</span><span>M</span><span>L</span><span>XL</span>
+    </div>
+    <div class="size-chart__row">
+      <span>LENGTH</span><span>24.25</span><span>25</span><span>25.75</span><span>26.5</span>
+    </div>
+    <div class="size-chart__row">
+      <span>PIT2PIT</span><span>19.5</span><span>20.5</span><span>21.5</span><span>22.5</span>
+    </div>
+    <div class="size-chart__row">
+      <span>HEM</span><span>20.5</span><span>21.5</span><span>22.5</span><span>23.5</span>
+    </div>
+    <div class="size-chart__row">
+      <span>SLEEVE</span><span>5.25</span><span>5.5</span><span>6.5</span><span>6.25</span>
+    </div>
+  </section>
+
+  <!-- Hydrogen/Remix inline script with product JSON (React streaming format) -->
+  <script>
+    window.__remixContext = {
+      state: {
+        loaderData: {
+          "routes/products.$handle": {
+            product: {
+              id: "gid://shopify/Product/8765432100000",
+              title: "SLUTTIER BASIC RED",
+              vendor: "IONGAF",
+              options: [{ name: "Size", optionValues: [
+                { name: "S", handle: "s" },
+                { name: "M", handle: "m" },
+                { name: "L", handle: "l" },
+                { name: "XL", handle: "xl" }
+              ]}],
+              variants: {
+                nodes: [
+                  { id: "gid://shopify/ProductVariant/111", title: "S", option1: "S", price: { amount: "44.00" } },
+                  { id: "gid://shopify/ProductVariant/222", title: "M", option1: "M", price: { amount: "44.00" } },
+                  { id: "gid://shopify/ProductVariant/333", title: "L", option1: "L", price: { amount: "44.00" } },
+                  { id: "gid://shopify/ProductVariant/444", title: "XL", option1: "XL", price: { amount: "44.00" } }
+                ]
+              },
+              sizeGuideTable: {
+                columns: ["Measurement", "S", "M", "L", "XL"],
+                rows: [
+                  { "Measurement": "LENGTH", "S": "24.25", "M": "25", "L": "25.75", "XL": "26.5" },
+                  { "Measurement": "PIT2PIT", "S": "19.5", "M": "20.5", "L": "21.5", "XL": "22.5" },
+                  { "Measurement": "HEM", "S": "20.5", "M": "21.5", "L": "22.5", "XL": "23.5" },
+                  { "Measurement": "SLEEVE", "S": "5.25", "M": "5.5", "L": "6.5", "XL": "6.25" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    };
+  </script>
+</body>
+</html>

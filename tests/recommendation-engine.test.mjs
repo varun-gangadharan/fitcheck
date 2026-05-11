@@ -146,7 +146,7 @@ test("prompt builder requests strict JSON and includes context", () => {
     evidenceSignals: []
   });
 
-  assert.match(prompt.system, /Do not invent/i);
+  assert.match(prompt.system, /Do not hallucinate/i);
   assert.match(prompt.user, /Return strict JSON only/i);
   assert.match(prompt.user, /Cotton Shirt/);
   assert.match(prompt.user, /suggestedSize/);

@@ -18,7 +18,7 @@
     .then((module) => {
       state.extractor = module;
       state.product = extractProduct();
-      if (module.looksLikeProductPage(document)) {
+      if (module.looksLikeProductPage(document, location.href)) {
         document.documentElement.dataset.fitcheckProductPage = "true";
       }
       return module;
@@ -427,7 +427,18 @@
   }
 
   function hasDetectedProduct(product) {
-    return Boolean(product.title && (product.sizeOptions.length || product.extractedSignals.hasAddToCart || product.sizeChart.tables.length));
+    if (!product.title) return false;
+    return (
+      product.sizeOptions.length > 0 ||
+      product.extractedSignals.hasAddToCart ||
+      product.sizeChart.tables.length > 0 ||
+      Boolean(product.sizeChart.sourceText) ||
+      isProductUrl(product.url)
+    );
+  }
+
+  function isProductUrl(url) {
+    return /\/products?\/|\/shop\/[^/?#]+|\/item\//i.test(url || "");
   }
 
   function emptyProduct() {

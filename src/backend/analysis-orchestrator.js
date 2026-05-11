@@ -41,7 +41,8 @@ export async function runAnalysis(payload) {
     profile: payload.profile,
     brandMemory: payload.brandMemory || [],
     history: payload.history || [],
-    evidenceSignals
+    evidenceSignals,
+    rulesResult
   });
 
   const ai = { mode, prompt };
@@ -60,6 +61,26 @@ export async function runAnalysis(payload) {
 
     if (modelResult.status === "ok" && modelResult.output) {
       ai.model.output = modelResult.output;
+
+      // Merge model output into the result — override rules engine fields that
+      // the model populated, fall back to rules values for any it left blank.
+      const out = modelResult.output;
+      return {
+        ...rulesResult,
+        ...(out.suggestedSize ? { suggestedSize: out.suggestedSize } : {}),
+        ...(out.backupSize ? { backupSize: out.backupSize } : {}),
+        ...(typeof out.confidence === "number" ? { confidence: out.confidence } : {}),
+        ...(typeof out.riskScore === "number" ? { riskScore: out.riskScore } : {}),
+        ...(out.explanation ? { explanation: out.explanation } : {}),
+        ...(Array.isArray(out.evidenceSnippets) && out.evidenceSnippets.length
+          ? { evidenceSnippets: out.evidenceSnippets }
+          : {}),
+        ...(Array.isArray(out.ruleSignals) && out.ruleSignals.length
+          ? { ruleSignals: out.ruleSignals }
+          : {}),
+        webEvidence,
+        ai
+      };
     }
   }
 

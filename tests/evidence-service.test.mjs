@@ -57,10 +57,10 @@ test("builds search queries from brand and product context", () => {
   });
 
   assert.deepEqual(queries, [
-    "Acme jean runs small",
-    "Acme bottoms size up",
+    "Straight Leg Jean sizing runs small",
+    "Acme jean size up",
     "Acme true to size",
-    "Acme fit thread",
+    "Straight Leg Jean fit review reddit",
     "Acme sizing reddit"
   ]);
 });

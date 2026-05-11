@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fitcheck — Privacy Policy</title>
+  <style>
+    body {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #17201a;
+      background: #fbfcf8;
+    }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    h2 { font-size: 16px; margin-top: 32px; color: #2e4030; }
+    p, li { color: #2e3d30; }
+    a { color: #2e6e38; }
+    .last-updated { color: #5d6a5f; font-size: 13px; margin-bottom: 32px; }
+    hr { border: none; border-top: 1px solid #dfe5dc; margin: 32px 0; }
+  </style>
+</head>
+<body>
+  <h1>Fitcheck Privacy Policy</h1>
+  <p class="last-updated">Last updated: May 2026</p>
+
+  <p>
+    Fitcheck is a Chrome extension that gives you personalized sizing recommendations on
+    fashion product pages. This policy explains what data the extension accesses and how
+    it is handled.
+  </p>
+
+  <h2>Data we collect</h2>
+  <p>Fitcheck does <strong>not</strong> collect, transmit, or store any data on external servers.
+  All data stays on your device.</p>
+  <ul>
+    <li><strong>Your profile</strong> (usual sizes, fit preferences, optional body measurements) —
+      stored only in <code>chrome.storage.local</code> on your machine.</li>
+    <li><strong>Brand notes and fit history</strong> — stored only in <code>chrome.storage.local</code>.</li>
+    <li><strong>Product page content</strong> — the extension reads DOM content from fashion product
+      pages you visit in order to extract size charts, size options, and fit signals.
+      This content is processed locally and is never transmitted to any Fitcheck server.</li>
+  </ul>
+
+  <h2>Local API</h2>
+  <p>
+    If you choose to run the optional local API (<code>npm run api</code>), it runs on your
+    machine at <code>127.0.0.1:8787</code> and is not accessible from the internet.
+    When enabled, the extension sends product data and your profile to this local process.
+    The local API may call third-party services you configure:
+  </p>
+  <ul>
+    <li><strong>Gemini (Google AI)</strong> — if you set a Gemini API key and enable
+      model-assisted mode. Product data (brand, title, size chart) is sent to Google's API.
+      Your personal measurements and profile are included in the prompt.</li>
+    <li><strong>Firecrawl / Brave Search</strong> — if you provide a search API key and
+      enable web evidence mode. Queries like "<em>Brand sizing reddit</em>" are sent to
+      the respective search provider. No personal data is included in search queries.</li>
+  </ul>
+  <p>
+    All third-party API keys are stored in a <code>.env</code> file on your machine.
+    They are never stored in the extension or transmitted by the extension itself.
+  </p>
+
+  <h2>Permissions used</h2>
+  <ul>
+    <li><strong>activeTab</strong> — read the current tab's URL and send messages to the content script.</li>
+    <li><strong>storage</strong> — save your profile, history, and brand notes locally.</li>
+    <li><strong>tabs</strong> — detect whether the active tab is a product page.</li>
+    <li><strong>host_permissions (all URLs)</strong> — inject the content script on product pages
+      so Fitcheck can read size charts and size options from the DOM.</li>
+  </ul>
+
+  <h2>Data sharing</h2>
+  <p>Fitcheck does not share, sell, or transmit your data to any third party, except
+  as described above when you explicitly configure a third-party API key.</p>
+
+  <h2>Data retention</h2>
+  <p>All locally stored data (profile, history, brand notes) remains on your device until
+  you clear it via the Fitcheck options page or uninstall the extension.</p>
+
+  <h2>Contact</h2>
+  <p>If you have privacy questions, open an issue on the
+  <a href="https://github.com/anthropics/claude-code/issues" target="_blank" rel="noopener">project repository</a>.</p>
+
+  <hr>
+  <p style="font-size: 13px; color: #5d6a5f;">
+    Fitcheck is open-source software. Your data is yours.
+  </p>
+</body>
+</html>

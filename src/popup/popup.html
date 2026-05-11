@@ -11,15 +11,32 @@
       <header>
         <div>
           <p>Fitcheck</p>
-          <h1>Size recommendation</h1>
+          <h1>Size advisor</h1>
         </div>
         <span id="page-state">Checking</span>
       </header>
 
+      <!-- Shown when the user has not yet saved a profile -->
+      <section class="setup-banner" id="setup-banner" hidden>
+        <p>Set up your profile to get accurate size picks.</p>
+        <button type="button" id="setup-btn">Set up now</button>
+      </section>
+
+      <!-- Active-page product card -->
       <section class="product" id="product-card">
         <p class="muted">Active page</p>
         <strong id="product-title">No product detected yet</strong>
         <span id="product-brand"></span>
+      </section>
+
+      <!-- Last analysis result (hidden until there's a stored result) -->
+      <section class="last-result" id="last-result" hidden>
+        <p class="muted">Last recommendation</p>
+        <div class="result-row">
+          <span class="result-size" id="result-size"></span>
+          <span class="result-confidence" id="result-confidence"></span>
+        </div>
+        <p class="result-product" id="result-product"></p>
       </section>
 
       <section class="actions">

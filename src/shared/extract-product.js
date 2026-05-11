@@ -85,7 +85,13 @@ export function extractProductFromDocument(documentRef = globalThis.document, op
   const fitSignals = extractFitSignals(pageText);
   const category = inferCategory(`${title} ${getMeta(documentRef, "name", "description")} ${pageText.slice(0, 1200)}`);
   const hasAddToCart = Boolean(
-    documentRef?.querySelector?.("button[name*='add' i], button[id*='add' i], [aria-label*='add to cart' i], [aria-label*='add to bag' i]")
+    documentRef?.querySelector?.(
+      "button[name*='add' i], button[id*='add' i], " +
+      "[aria-label*='add to cart' i], [aria-label*='add to bag' i], " +
+      "[data-add-to-cart], [data-testid*='add-to-cart' i], " +
+      "button[type='submit'][class*='cart' i], button[type='submit'][class*='AddToCart' i], " +
+      "form[action*='/cart'] button[type='submit'], form[action*='cart/add'] button"
+    )
   );
   const product = normalizeProductRecord({
     url,
@@ -130,13 +136,23 @@ export function extractProductFromHtml(html, options = {}) {
     getMetaFromHtml(html, "property", "og:site_name"),
     guessBrandFromTitle(title)
   ]);
+  // Collect inline script contents for JSON-based extraction
+  const scriptTexts = [];
+  for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+    scriptTexts.push(match[1]);
+  }
+
   const sizeOptions = uniqueClean([
     ...extractSelectOptionsFromHtml(html),
-    ...extractSizeButtonsFromHtml(html)
+    ...extractSizeButtonsFromHtml(html),
+    ...extractSizeOptionsFromScriptTexts(scriptTexts)
   ]).filter(isLikelySize);
+
+  const htmlTables = extractTablesFromHtml(html);
+  const scriptTables = htmlTables.length ? [] : extractSizeChartFromScriptTexts(scriptTexts);
   const sizeChart = {
     sourceText: findNearbyText(pageText, SIZE_CHART_KEYWORDS),
-    tables: extractTablesFromHtml(html)
+    tables: [...htmlTables, ...scriptTables]
   };
   const product = normalizeProductRecord({
     url: options.url || "",
@@ -196,12 +212,27 @@ export function normalizeProductRecord(record) {
   };
 }
 
-export function looksLikeProductPage(documentRef = globalThis.document) {
+export function looksLikeProductPage(documentRef = globalThis.document, url = "") {
+  // URL pattern match — Shopify, WooCommerce, most e-commerce platforms
+  if (/\/products?\/|\/shop\/[^/]+$|\/item\//i.test(url || globalThis.location?.href || "")) {
+    return true;
+  }
+  // og:type = "product"
+  const ogType = getMeta(documentRef, "property", "og:type");
+  if (/product/i.test(ogType)) return true;
+  // Page text signals
   const text = getVisibleText(documentRef).toLowerCase();
-  return /add to cart|add to bag|size chart|size guide|select size|choose a size/.test(text);
+  if (/add to cart|add to bag|size chart|size guide|select size|choose a size/.test(text)) {
+    return true;
+  }
+  // Price element present (strong signal of a product page)
+  if (documentRef?.querySelector?.("[class*='price' i], [itemprop='price'], [data-price]")) {
+    return true;
+  }
+  return false;
 }
 
-const SIZE_CHART_KEYWORDS = ["size chart", "size guide", "measurements", "waist", "inseam", "chest", "bust", "hips"];
+const SIZE_CHART_KEYWORDS = ["size chart", "size guide", "measurements", "waist", "inseam", "chest", "bust", "hips", "sleeve", "pit2pit", "hem", "length", "shoulder"];
 const FABRIC_KEYWORDS = ["fabric", "composition", "materials", "cotton", "polyester", "wool", "linen", "elastane", "spandex", "viscose", "nylon"];
 const RETURN_KEYWORDS = ["return", "returns", "exchange", "refund", "final sale"];
 
@@ -214,31 +245,223 @@ function extractSizeOptionsFromDocument(documentRef) {
     "[data-testid*='size' i]",
     "[class*='size' i] button",
     "button[name*='size' i]",
-    "input[name*='size' i]"
+    "input[name*='size' i]",
+    // Shopify / Hydrogen patterns
+    "input[type='radio'][name='Size']",
+    "input[type='radio'][name='size']",
+    "[data-option-name*='size' i] input",
+    "[data-option*='size' i]",
+    "[data-value][class*='swatch' i]",
+    "[data-value][class*='size' i]"
   ];
   const values = [];
 
   for (const selector of selectors) {
     documentRef?.querySelectorAll?.(selector).forEach((element) => {
-      const value = element.value || element.getAttribute("value") || element.getAttribute("aria-label") || element.textContent;
+      const value = element.value || element.getAttribute("value") || element.getAttribute("data-value") || element.getAttribute("aria-label") || element.textContent;
       values.push(cleanSize(value));
     });
+  }
+
+  // Fallback: scan inline scripts for Shopify/Hydrogen JSON variant data
+  if (!values.length) {
+    values.push(...extractSizeOptionsFromScripts(documentRef));
   }
 
   return uniqueClean(values).filter(isLikelySize);
 }
 
+/**
+ * Scans inline <script> tags for product variant/option data.
+ * Handles Shopify Hydrogen (optionValues), classic Shopify (option1), and
+ * any store that embeds variant JSON in the page.
+ */
+function extractSizeOptionsFromScripts(documentRef) {
+  const scriptTexts = Array.from(documentRef?.querySelectorAll?.("script:not([src])") || [])
+    .map((s) => s.textContent || "");
+  return extractSizeOptionsFromScriptTexts(scriptTexts);
+}
+
+/** Core logic — operates on an array of script content strings (works in both DOM and HTML paths). */
+function extractSizeOptionsFromScriptTexts(scriptTexts) {
+  const values = [];
+
+  for (const text of scriptTexts) {
+    if (text.length > 300_000) continue; // skip enormous bundles
+
+    // Hydrogen: "optionValues":[{"name":"S",...},{"name":"M",...}]
+    for (const block of text.matchAll(/"optionValues"\s*:\s*\[([\s\S]*?)\]/g)) {
+      for (const nameMatch of block[1].matchAll(/"name"\s*:\s*"([^"]+)"/g)) {
+        values.push(nameMatch[1]);
+      }
+    }
+
+    // Classic Shopify liquid: "option1":"S"
+    for (const match of text.matchAll(/"option[123]"\s*:\s*"([^"]{1,20})"/g)) {
+      values.push(match[1]);
+    }
+
+    // Generic: "variants":[{"title":"S",...}]  (only short title values)
+    for (const block of text.matchAll(/"variants"\s*:\s*\[([\s\S]*?)\]/g)) {
+      for (const match of block[1].matchAll(/"title"\s*:\s*"([^"]{1,8})"/g)) {
+        if (isLikelySize(match[1])) values.push(match[1]);
+      }
+    }
+  }
+
+  return values;
+}
+
 function extractSizeChartFromDocument(documentRef, pageText) {
-  const tables = Array.from(documentRef?.querySelectorAll?.("table") || [])
+  // 1. Standard HTML <table> elements
+  const htmlTables = Array.from(documentRef?.querySelectorAll?.("table") || [])
     .map(tableToStructuredData)
     .filter((table) => table.columns.length || table.rows.length);
 
+  // 2. Div/grid-based size charts (common in React/Hydrogen storefronts)
+  const divTables = htmlTables.length ? [] : extractDivTablesFromDocument(documentRef);
+
+  // 3. JSON size chart data embedded in inline scripts
+  const scriptTables = (htmlTables.length || divTables.length) ? [] : extractSizeChartFromScripts(documentRef);
+
+  const tables = [...htmlTables, ...divTables, ...scriptTables];
   const nearby = findNearbyText(pageText, SIZE_CHART_KEYWORDS);
 
-  return {
-    sourceText: nearby,
-    tables
-  };
+  return { sourceText: nearby, tables };
+}
+
+/**
+ * Extracts table-like data from div/grid structures — used when the size chart
+ * is rendered by a JS framework rather than as an HTML <table>.
+ */
+function extractDivTablesFromDocument(documentRef) {
+  const MEASUREMENT_RE = /\b(length|width|chest|bust|waist|hip|shoulder|sleeve|pit.?2.?pit|hem|inseam|rise|thigh|knee)\b/i;
+  const tables = [];
+
+  // Try labeled containers first (most reliable)
+  const containerSel = [
+    "[class*='size-chart' i]", "[class*='sizechart' i]", "[class*='size_chart' i]",
+    "[id*='size-chart' i]",   "[id*='sizechart' i]",
+    "[class*='measurement' i]", "[class*='size-guide' i]", "[id*='size-guide' i]",
+    "[class*='sizing' i]"
+  ].join(", ");
+
+  for (const container of (documentRef?.querySelectorAll?.(containerSel) || [])) {
+    const table = parseGridContainer(container);
+    if (table && table.rows.length >= 1) {
+      tables.push(table);
+    }
+  }
+
+  if (tables.length) return tables;
+
+  // Fallback: find any div/section with consistent row structure + measurement keywords
+  for (const el of (documentRef?.querySelectorAll?.("div, section, ul") || [])) {
+    if (!MEASUREMENT_RE.test(el.textContent)) continue;
+    const children = Array.from(el.children).filter(
+      (c) => ["DIV", "LI", "P"].includes(c.tagName)
+    );
+    if (children.length < 2 || children.length > 30) continue;
+
+    const table = parseGridContainer(el);
+    if (table && table.rows.length >= 2 && MEASUREMENT_RE.test(table.columns.join(" "))) {
+      tables.push(table);
+      break;
+    }
+  }
+
+  return tables;
+}
+
+/**
+ * Attempts to read a container's children as rows of a table.
+ * Returns null if the structure isn't table-like.
+ */
+function parseGridContainer(container) {
+  const CELL_TAGS = new Set(["DIV", "SPAN", "LI", "TD", "TH", "P"]);
+  const childRows = Array.from(container.children).filter(
+    (c) => ["DIV", "LI", "TR", "P"].includes(c.tagName)
+  );
+  if (childRows.length < 2) return null;
+
+  // Find the most common child-cell count across rows
+  const cellCounts = childRows.map(
+    (row) => Array.from(row.children).filter((c) => CELL_TAGS.has(c.tagName)).length
+  );
+  const freq = {};
+  for (const n of cellCounts) freq[n] = (freq[n] || 0) + 1;
+  const bestCount = Number(Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0]);
+  if (bestCount < 2) return null;
+
+  const rows = childRows
+    .filter((_, i) => cellCounts[i] === bestCount)
+    .map((row) =>
+      Array.from(row.children)
+        .filter((c) => CELL_TAGS.has(c.tagName))
+        .map((cell) => clean(cell.textContent))
+    );
+
+  if (rows.length < 2) return null;
+
+  const columns = rows[0];
+  const dataRows = rows.slice(1).map((row) => rowToObject(columns, row));
+  const caption = clean(container.querySelector("h2, h3, h4, caption, legend")?.textContent || "");
+
+  return { caption, columns, rows: dataRows };
+}
+
+/**
+ * Extracts structured size chart data from inline <script> JSON blobs.
+ * Handles Shopify Hydrogen's sizeGuideTable and similar patterns.
+ */
+function extractSizeChartFromScripts(documentRef) {
+  const scriptTexts = Array.from(documentRef?.querySelectorAll?.("script:not([src])") || [])
+    .map((s) => s.textContent || "");
+  return extractSizeChartFromScriptTexts(scriptTexts);
+}
+
+/** Core logic — operates on an array of script content strings (works in both DOM and HTML paths). */
+function extractSizeChartFromScriptTexts(scriptTexts) {
+  for (const text of scriptTexts) {
+    if (text.length > 300_000) continue;
+
+    // Look for {columns:[...],"columns":[...], rows:[...]} shape (Hydrogen sizeGuideTable, etc.)
+    // Handles both JSON (quoted keys) and JS object literals (unquoted keys).
+    for (const match of text.matchAll(/(?:"columns"|columns)\s*:\s*(\[(?:"[^"]*"(?:,\s*)?)+\])\s*,\s*(?:"rows"|rows)\s*:\s*(\[[\s\S]*?\])\s*[,}]/g)) {
+      try {
+        const columns = JSON.parse(match[1]);
+        const rows = JSON.parse(match[2]);
+        if (Array.isArray(columns) && columns.length >= 2 && Array.isArray(rows) && rows.length >= 1) {
+          const normRows = rows.map((row) => {
+            const obj = {};
+            for (const [k, v] of Object.entries(row)) obj[k] = String(v ?? "");
+            return obj;
+          });
+          return [{ caption: "Size Guide", columns, rows: normRows }];
+        }
+      } catch (_) { /* keep scanning */ }
+    }
+
+    // Named keys: sizeGuideTable, sizeChart, measurementTable, etc. (quoted or unquoted)
+    for (const key of ["sizeGuideTable", "sizeChart", "size_chart", "measurementTable", "sizingTable"]) {
+      const re = new RegExp(`(?:"${key}"|${key})\\s*:\\s*(\\{[\\s\\S]{10,3000}?\\})`, "g");
+      for (const match of text.matchAll(re)) {
+        try {
+          const data = JSON.parse(match[1]);
+          if (Array.isArray(data.columns) && Array.isArray(data.rows)) {
+            const normRows = data.rows.map((row) => {
+              const obj = {};
+              for (const [k, v] of Object.entries(row)) obj[k] = String(v ?? "");
+              return obj;
+            });
+            return [{ caption: "Size Guide", columns: data.columns, rows: normRows }];
+          }
+        } catch (_) { /* keep scanning */ }
+      }
+    }
+  }
+
+  return [];
 }
 
 function tableToStructuredData(table) {
@@ -275,10 +498,11 @@ function extractFitSignals(text) {
 
 export function inferCategory(value) {
   const lower = String(value).toLowerCase();
-  if (/\b(jean|pant|trouser|short|skirt|legging|jogger|chino|bottom)\b/.test(lower)) {
+  // s? makes each term match both singular and plural (jean/jeans, pant/pants, etc.)
+  if (/\b(jeans?|pants?|trousers?|shorts?|skirts?|leggings?|joggers?|chinos?|bottoms?|denim)\b/.test(lower)) {
     return "bottoms";
   }
-  if (/\b(shirt|tee|t-shirt|top|sweater|hoodie|jacket|coat|blouse|tank|cardigan|dress)\b/.test(lower)) {
+  if (/\b(shirts?|tees?|t-shirts?|tops?|sweaters?|hoodies?|jackets?|coats?|blouses?|tanks?|cardigans?|dresses?)\b/.test(lower)) {
     return "tops";
   }
   return "unknown";

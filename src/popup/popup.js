@@ -4,7 +4,13 @@ const elements = {
   brand: document.getElementById("product-brand"),
   status: document.getElementById("status"),
   openPanel: document.getElementById("open-panel"),
-  openOptions: document.getElementById("open-options")
+  openOptions: document.getElementById("open-options"),
+  setupBanner: document.getElementById("setup-banner"),
+  setupBtn: document.getElementById("setup-btn"),
+  lastResult: document.getElementById("last-result"),
+  resultSize: document.getElementById("result-size"),
+  resultConfidence: document.getElementById("result-confidence"),
+  resultProduct: document.getElementById("result-product")
 };
 
 let activeTabId = null;
@@ -15,14 +21,42 @@ async function init() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTabId = tab?.id;
 
+  // Load profile + last analysis concurrently
+  const [, storageValues] = await Promise.all([
+    activeTabId && tab.url?.startsWith("http") ? refreshProduct() : Promise.resolve(),
+    chrome.storage.local.get(["fitcheck:userProfile", "fitcheck:analysisResults"])
+  ]);
+
   if (!activeTabId || !tab.url?.startsWith("http")) {
     setStatus("Open a product page to use Fitcheck.");
     elements.pageState.textContent = "No page";
     elements.openPanel.disabled = true;
-    return;
   }
 
-  await refreshProduct();
+  const profile = storageValues["fitcheck:userProfile"];
+  const results = storageValues["fitcheck:analysisResults"];
+
+  // Show setup banner if the profile has never been explicitly saved
+  if (!profile?.updatedAt) {
+    elements.setupBanner.hidden = false;
+  }
+
+  // Show last analysis result if available
+  if (results?.length) {
+    const latest = results[0];
+    const size = latest.analysis?.suggestedSize;
+    const confidence = latest.analysis?.confidence;
+    const brand = latest.product?.brand || "";
+    const title = latest.product?.title || "";
+    if (size) {
+      elements.resultSize.textContent = `Size ${size}`;
+      elements.resultConfidence.textContent = confidence
+        ? `${Math.round(confidence * 100)}% confidence`
+        : "";
+      elements.resultProduct.textContent = [brand, title].filter(Boolean).join(" · ").slice(0, 60);
+      elements.lastResult.hidden = false;
+    }
+  }
 }
 
 elements.openPanel.addEventListener("click", async () => {
@@ -38,6 +72,10 @@ elements.openOptions.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });
 
+elements.setupBtn.addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});
+
 async function refreshProduct() {
   try {
     const response = await chrome.tabs.sendMessage(activeTabId, {
@@ -50,7 +88,8 @@ async function refreshProduct() {
 
     elements.title.textContent = response.product.title || "Untitled item";
     elements.brand.textContent = response.product.brand || "Brand unknown";
-    elements.pageState.textContent = response.product.category === "unknown" ? "Detected" : response.product.category;
+    elements.pageState.textContent =
+      response.product.category === "unknown" ? "Detected" : response.product.category;
     setStatus("");
   } catch (_error) {
     elements.pageState.textContent = "Reload";

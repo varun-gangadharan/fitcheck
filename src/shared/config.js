@@ -27,6 +27,7 @@ export const ANALYSIS_MODE_IDS = Object.keys(ANALYSIS_MODES);
 
 export const DEFAULT_CONFIG = {
   apiUrl: DEFAULT_API_URL,
+  apiToken: "",
   analysisMode: "rules_only",
   webEvidenceEnabled: false,
   searchProvider: "firecrawl"

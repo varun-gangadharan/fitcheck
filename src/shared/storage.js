@@ -43,6 +43,7 @@ export async function saveConfig(config) {
     ...DEFAULT_CONFIG,
     ...config,
     apiUrl: String(config.apiUrl || DEFAULT_CONFIG.apiUrl).replace(/\/+$/, ""),
+    apiToken: String(config.apiToken || "").trim(),
     analysisMode: config.analysisMode || DEFAULT_CONFIG.analysisMode,
     webEvidenceEnabled: Boolean(config.webEvidenceEnabled),
     searchProvider: config.searchProvider || DEFAULT_CONFIG.searchProvider,

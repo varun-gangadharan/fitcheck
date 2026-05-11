@@ -106,12 +106,18 @@ export function buildSearchQueries(product) {
   const brand = product.brand || product.title || "fashion item";
   const itemType = inferItemType(product);
   const category = product.category || "clothing";
+  const title = product.title || "";
+
+  // Use the specific product title when it adds signal beyond brand + itemType.
+  const productTerm = title && !title.toLowerCase().includes(brand.toLowerCase())
+    ? title
+    : `${brand} ${itemType}`;
 
   return [
-    `${brand} ${itemType} runs small`,
-    `${brand} ${category} size up`,
+    `${productTerm} sizing runs small`,
+    `${brand} ${itemType} size up`,
     `${brand} true to size`,
-    `${brand} fit thread`,
+    `${productTerm} fit review reddit`,
     `${brand} sizing reddit`
   ];
 }
