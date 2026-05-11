@@ -149,6 +149,8 @@ All variables are optional unless you want the corresponding feature.
 
 The server loads `.env` from the repo root automatically. Never put API keys in the extension itself — the extension has no access to them by design.
 
+By default, the local API running on `127.0.0.1` does not require an API token. If you want to protect a shared or hosted deployment, set `FITCHECK_REQUIRE_API_TOKEN=true` and distribute Bearer tokens separately.
+
 ---
 
 ## Chrome Web Store privacy posture

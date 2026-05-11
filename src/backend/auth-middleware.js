@@ -40,11 +40,20 @@ function sendError(response, status, code, message) {
  * @returns {object|null} Token record on success, null if response already sent.
  */
 export function checkAuth(request, response, { isAiCall = false } = {}) {
+  if (!requiresApiToken()) {
+    return {
+      token: "local_no_auth",
+      label: "Local no-auth mode",
+      active: true,
+      usage: {}
+    };
+  }
+
   // 1. Extract token from Authorization header
   const auth = request.headers["authorization"] || "";
   if (!auth.startsWith("Bearer ")) {
     sendError(response, 401, "missing_token",
-      "Authorization header required. Format: Bearer fck_... — get a token from the Fitcheck team.");
+      "Authorization header required. Format: Bearer fck_....");
     return null;
   }
   const rawToken = auth.slice(7).trim();
@@ -90,4 +99,8 @@ export function checkAuth(request, response, { isAiCall = false } = {}) {
   }
 
   return record;
+}
+
+function requiresApiToken() {
+  return /^(1|true|yes|on)$/i.test(String(process.env.FITCHECK_REQUIRE_API_TOKEN || ""));
 }
