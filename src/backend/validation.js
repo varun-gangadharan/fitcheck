@@ -1,5 +1,6 @@
 export function validateAnalyzeRequest(payload) {
   const errors = [];
+  const allowedCategories = ["tops", "bottoms", "shoes", "accessories", "unknown"];
 
   if (!payload || typeof payload !== "object") {
     return ["Request body must be a JSON object."];
@@ -10,8 +11,8 @@ export function validateAnalyzeRequest(payload) {
   } else {
     if (!stringValue(payload.product.title)) errors.push("product.title is required.");
     if (!stringValue(payload.product.url)) errors.push("product.url is required.");
-    if (!["tops", "bottoms", "unknown"].includes(payload.product.category)) {
-      errors.push("product.category must be tops, bottoms, or unknown.");
+    if (!allowedCategories.includes(payload.product.category)) {
+      errors.push(`product.category must be ${allowedCategories.slice(0, -1).join(", ")}, or unknown.`);
     }
     if (!Array.isArray(payload.product.sizeOptions)) {
       errors.push("product.sizeOptions must be an array.");

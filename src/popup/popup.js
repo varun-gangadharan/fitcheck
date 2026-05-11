@@ -14,21 +14,23 @@ const elements = {
 };
 
 let activeTabId = null;
+let activeTabUrl = "";
 
 init();
 
 async function init() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTabId = tab?.id;
+  activeTabUrl = tab?.url || "";
 
   // Load profile + last analysis concurrently
   const [, storageValues] = await Promise.all([
-    activeTabId && tab.url?.startsWith("http") ? refreshProduct() : Promise.resolve(),
+    activeTabId && isSupportedPage(activeTabUrl) ? refreshProduct() : Promise.resolve(),
     chrome.storage.local.get(["fitcheck:userProfile", "fitcheck:analysisResults"])
   ]);
 
-  if (!activeTabId || !tab.url?.startsWith("http")) {
-    setStatus("Open a product page to use Fitcheck.");
+  if (!activeTabId || !isSupportedPage(activeTabUrl)) {
+    setStatus("Open a normal shopping page to use Fitcheck.");
     elements.pageState.textContent = "No page";
     elements.openPanel.disabled = true;
   }
@@ -61,10 +63,11 @@ async function init() {
 
 elements.openPanel.addEventListener("click", async () => {
   try {
+    await ensureReady();
     await chrome.tabs.sendMessage(activeTabId, { type: "FITCHECK_TOGGLE_PANEL" });
     setStatus("Panel toggled on the active page.");
   } catch (_error) {
-    setStatus("Reload the page, then try opening the panel again.");
+    setStatus("Fitcheck can only run after you open it on a normal product page.");
   }
 });
 
@@ -78,6 +81,7 @@ elements.setupBtn.addEventListener("click", () => {
 
 async function refreshProduct() {
   try {
+    await ensureReady();
     const response = await chrome.tabs.sendMessage(activeTabId, {
       type: "FITCHECK_GET_PRODUCT"
     });
@@ -92,9 +96,27 @@ async function refreshProduct() {
       response.product.category === "unknown" ? "Detected" : response.product.category;
     setStatus("");
   } catch (_error) {
-    elements.pageState.textContent = "Reload";
-    setStatus("Reload this tab so the Fitcheck content script can start.");
+    elements.pageState.textContent = "Unavailable";
+    setStatus("Use Fitcheck from the toolbar while viewing a shopping page.");
   }
+}
+
+async function ensureReady() {
+  if (!activeTabId || !isSupportedPage(activeTabUrl)) {
+    throw new Error("No supported tab.");
+  }
+
+  const response = await chrome.runtime.sendMessage({
+    type: "FITCHECK_ENSURE_CONTENT_SCRIPT",
+    tabId: activeTabId
+  });
+  if (!response?.ok) {
+    throw new Error(response?.error || "Could not access this page.");
+  }
+}
+
+function isSupportedPage(url) {
+  return /^https?:\/\//i.test(url || "");
 }
 
 function setStatus(message) {

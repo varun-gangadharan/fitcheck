@@ -1,4 +1,9 @@
 (function fitcheckContentScript() {
+  if (globalThis.__fitcheckContentScriptLoaded) {
+    return;
+  }
+  globalThis.__fitcheckContentScriptLoaded = true;
+
   const PANEL_ID = "fitcheck-panel-root";
   const STYLE_ID = "fitcheck-panel-style";
   const DETAIL_ID = "fitcheck-detail-region";
@@ -29,6 +34,11 @@
     });
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === "FITCHECK_PING") {
+      sendResponse({ ok: true });
+      return false;
+    }
+
     if (message?.type === "FITCHECK_GET_PRODUCT") {
       state.extractorReady.then(() => {
         state.product = extractProduct();
@@ -329,6 +339,7 @@
     return `
       <section class="fitcheck-panel__details">
         <dl>
+          <div><dt>Price</dt><dd>${escapeHtml(product.price || "Missing")}</dd></div>
           <div><dt>Sizes</dt><dd>${escapeHtml(product.sizeOptions.join(", ") || "Missing")}</dd></div>
           <div><dt>Signals</dt><dd>${escapeHtml(product.fitSignals.map((signal) => signal.label).join(", ") || "None visible")}</dd></div>
         </dl>

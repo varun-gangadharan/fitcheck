@@ -136,6 +136,40 @@ test("maps Firecrawl search response into evidence snippets", async () => {
   }
 });
 
+test("irrelevant snippets are filtered unless they contain real sizing language", async () => {
+  const noisyResponse = {
+    success: true,
+    data: {
+      web: [
+        {
+          title: "Acme launch video",
+          description: "Watch the new arrivals video and shop now with free shipping.",
+          url: "https://youtube.com/watch?v=123"
+        },
+        {
+          title: "Acme sizing discussion",
+          description: "I bought these sneakers and they run small, so size up half a size.",
+          url: "https://reddit.com/r/sneakers/example"
+        }
+      ]
+    }
+  };
+  const { restore } = mockFetch(noisyResponse);
+
+  try {
+    const evidence = await gatherEvidence(
+      { brand: "Acme", title: "Trainer", category: "shoes" },
+      { enabled: true, provider: "firecrawl", apiKey: "fc-test" }
+    );
+
+    assert.equal(evidence.snippets.length, 1);
+    assert.match(evidence.snippets[0].url, /reddit/);
+    assert.ok(evidence.signals.some((signal) => signal.signal === "runsSmall"));
+  } finally {
+    restore();
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Persistence tests
 // ---------------------------------------------------------------------------

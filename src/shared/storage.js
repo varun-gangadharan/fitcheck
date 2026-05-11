@@ -149,13 +149,35 @@ export async function updateBrandMemoryFromOutcome(record) {
     ? [note.notes, record.note].filter(Boolean).join(" | ")
     : note.notes;
 
+  // Update numeric bias from this outcome. Bias accumulates across orders
+  // and is used by the recommendation engine to adjust size suggestions.
+  const bias = computeUpdatedBias(note.bias ?? 0, record.outcome);
+
   return upsertBrandNote({
     ...note,
     lastOutcome: record.outcome || note.lastOutcome || "",
     outcomeCounts: counts,
     typicalRecommendation,
+    bias,
     notes: noteText
   });
+}
+
+/**
+ * Compute new bias value [-2, 2] from the previous bias and the latest outcome.
+ *
+ *   too_small  → +0.5  (need to go up)
+ *   too_big    → -0.5  (need to go down)
+ *   returned   → reinforce current direction by +0.3 (returns signal sustained discomfort)
+ *   fit        → nudge 0.2 toward 0 (good outcome, reduce extremity)
+ */
+function computeUpdatedBias(currentBias, outcome) {
+  let delta = 0;
+  if (outcome === "too_small") delta = 0.5;
+  else if (outcome === "too_big") delta = -0.5;
+  else if (outcome === "returned") delta = currentBias > 0 ? 0.3 : currentBias < 0 ? -0.3 : 0;
+  else if (outcome === "fit") delta = currentBias > 0 ? -0.2 : currentBias < 0 ? 0.2 : 0;
+  return Math.max(-2, Math.min(2, (currentBias || 0) + delta));
 }
 
 export async function clearHistory() {
@@ -181,7 +203,9 @@ async function migrateStorage() {
     outcomeCounts: {
       ...EMPTY_BRAND_NOTE.outcomeCounts,
       ...(note.outcomeCounts || {})
-    }
+    },
+    // v3: ensure numeric bias field exists
+    bias: typeof note.bias === "number" ? note.bias : 0
   }));
   const history = values[STORAGE_KEYS.history] || [];
   const analysisResults = values[STORAGE_KEYS.analysisResults] || history

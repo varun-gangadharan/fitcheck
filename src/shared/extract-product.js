@@ -1,50 +1,34 @@
 import { EMPTY_PRODUCT_RECORD } from "./models.js";
 
 const DEBUG_STORAGE_KEY = "fitcheck:debug";
+
+// Clothing sizes
 const SIZE_TOKENS = new Set([
-  "XXS",
-  "XS",
-  "S",
-  "M",
-  "L",
-  "XL",
-  "XXL",
-  "XXXL",
-  "0",
-  "2",
-  "4",
-  "6",
-  "8",
-  "10",
-  "12",
-  "14",
-  "16",
-  "18",
-  "24",
-  "25",
-  "26",
-  "27",
-  "28",
-  "29",
-  "30",
-  "31",
-  "32",
-  "33",
-  "34",
-  "36",
-  "38",
-  "40"
+  "ONE SIZE", "OS", "O/S",
+  "XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL",
+  // Women's numeric dress/pants
+  "0", "2", "4", "6", "8", "10", "12", "14", "16", "18",
+  // Jeans waist
+  "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "36", "38", "40",
+  // EU shoe sizes
+  "35", "36", "37", "38", "39", "41", "42", "43", "44", "45", "46", "47", "48",
+  // US shoe half-sizes (stored as strings with decimal)
+  "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12", "13", "14", "15"
 ]);
 
 const FIT_SIGNAL_PATTERNS = [
-  { type: "runs_small", label: "Runs small", pattern: /\bruns?\s+small\b|\bsize\s+up\b/i },
-  { type: "runs_large", label: "Runs large", pattern: /\bruns?\s+large\b|\bsize\s+down\b/i },
-  { type: "true_to_size", label: "True to size", pattern: /\btrue\s+to\s+size\b|\btts\b/i },
-  { type: "oversized", label: "Oversized", pattern: /\boversi[sz]ed\b/i },
-  { type: "slim_fit", label: "Slim fit", pattern: /\bslim\s+fit\b|\btailored\s+fit\b/i },
-  { type: "relaxed_fit", label: "Relaxed fit", pattern: /\brelaxed\s+fit\b|\bloose\s+fit\b/i },
-  { type: "stretch", label: "Stretch", pattern: /\bstretch\b|\belastane\b|\bspandex\b/i },
-  { type: "non_stretch", label: "Non-stretch", pattern: /\bnon[-\s]?stretch\b|\bno\s+stretch\b/i }
+  { type: "runs_small",   label: "Runs small",    pattern: /\bruns?\s+small\b|\bsize\s+up\b/i },
+  { type: "runs_large",   label: "Runs large",    pattern: /\bruns?\s+large\b|\bsize\s+down\b/i },
+  { type: "true_to_size", label: "True to size",  pattern: /\btrue\s+to\s+size\b|\btts\b/i },
+  { type: "oversized",    label: "Oversized",     pattern: /\boversi[sz]ed\b/i },
+  { type: "slim_fit",     label: "Slim fit",      pattern: /\bslim\s+fit\b|\btailored\s+fit\b/i },
+  { type: "relaxed_fit",  label: "Relaxed fit",   pattern: /\brelaxed\s+fit\b|\bloose\s+fit\b/i },
+  { type: "stretch",      label: "Stretch",       pattern: /\bstretch\b|\belastane\b|\bspandex\b/i },
+  { type: "non_stretch",  label: "Non-stretch",   pattern: /\bnon[-\s]?stretch\b|\bno\s+stretch\b/i },
+  // Shoe-specific
+  { type: "runs_narrow",  label: "Runs narrow",   pattern: /\bruns?\s+narrow\b|\bfits?\s+narrow\b|\bnarrow\s+(?:fit|width)\b/i },
+  { type: "runs_wide",    label: "Runs wide",     pattern: /\bruns?\s+wide\b|\bfits?\s+wide\b|\bwide\s+(?:fit|width)\b/i },
+  { type: "half_size_up", label: "Half size up",  pattern: /\bhalf(?:\s+a)?\s+size\s+up\b|\bgo\s+half\s+(?:a\s+)?size\b/i }
 ];
 
 export function extractProductFromDocument(documentRef = globalThis.document, options = {}) {
@@ -83,7 +67,13 @@ export function extractProductFromDocument(documentRef = globalThis.document, op
   const fabricComposition = findNearbyText(pageText, FABRIC_KEYWORDS);
   const returnPolicy = findNearbyText(pageText, RETURN_KEYWORDS);
   const fitSignals = extractFitSignals(pageText);
-  const category = inferCategory(`${title} ${getMeta(documentRef, "name", "description")} ${pageText.slice(0, 1200)}`);
+  const price = extractPrice(documentRef);
+  const category = inferCategory({
+    title,
+    description: getMeta(documentRef, "name", "description"),
+    url,
+    pageText: pageText.slice(0, 1200)
+  });
   const hasAddToCart = Boolean(
     documentRef?.querySelector?.(
       "button[name*='add' i], button[id*='add' i], " +
@@ -98,6 +88,7 @@ export function extractProductFromDocument(documentRef = globalThis.document, op
     brand,
     title,
     category,
+    price,
     sizeOptions,
     sizeChart,
     fabricComposition,
@@ -158,7 +149,13 @@ export function extractProductFromHtml(html, options = {}) {
     url: options.url || "",
     brand,
     title,
-    category: inferCategory(`${title} ${pageText.slice(0, 1200)}`),
+    category: inferCategory({
+      title,
+      description: getMetaFromHtml(html, "name", "description"),
+      url: options.url || "",
+      pageText: pageText.slice(0, 1200)
+    }),
+    price: extractPriceFromHtml(html, pageText),
     sizeOptions,
     sizeChart,
     fabricComposition: findNearbyText(pageText, FABRIC_KEYWORDS),
@@ -202,7 +199,8 @@ export function normalizeProductRecord(record) {
     ...product,
     brand: clean(product.brand),
     title: clean(product.title),
-    category: ["tops", "bottoms", "unknown"].includes(product.category) ? product.category : "unknown",
+    price: clean(product.price),
+    category: PRODUCT_CATEGORIES.includes(product.category) ? product.category : "unknown",
     sizeOptions: uniqueClean(product.sizeOptions),
     fitSignals: dedupeSignals(product.fitSignals),
     extractedSignals: {
@@ -211,6 +209,8 @@ export function normalizeProductRecord(record) {
     }
   };
 }
+
+const PRODUCT_CATEGORIES = ["tops", "bottoms", "shoes", "accessories", "unknown"];
 
 export function looksLikeProductPage(documentRef = globalThis.document, url = "") {
   // URL pattern match — Shopify, WooCommerce, most e-commerce platforms
@@ -232,7 +232,12 @@ export function looksLikeProductPage(documentRef = globalThis.document, url = ""
   return false;
 }
 
-const SIZE_CHART_KEYWORDS = ["size chart", "size guide", "measurements", "waist", "inseam", "chest", "bust", "hips", "sleeve", "pit2pit", "hem", "length", "shoulder"];
+const SIZE_CHART_KEYWORDS = [
+  "size chart", "size guide", "measurements", "waist", "inseam", "chest", "bust",
+  "hips", "sleeve", "pit2pit", "hem", "length", "shoulder",
+  // Shoe-specific
+  "foot length", "eu size", "uk size", "us size", "insole"
+];
 const FABRIC_KEYWORDS = ["fabric", "composition", "materials", "cotton", "polyester", "wool", "linen", "elastane", "spandex", "viscose", "nylon"];
 const RETURN_KEYWORDS = ["return", "returns", "exchange", "refund", "final sale"];
 
@@ -335,7 +340,7 @@ function extractSizeChartFromDocument(documentRef, pageText) {
  * is rendered by a JS framework rather than as an HTML <table>.
  */
 function extractDivTablesFromDocument(documentRef) {
-  const MEASUREMENT_RE = /\b(length|width|chest|bust|waist|hip|shoulder|sleeve|pit.?2.?pit|hem|inseam|rise|thigh|knee)\b/i;
+  const MEASUREMENT_RE = /\b(length|width|chest|bust|waist|hip|shoulder|sleeve|pit.?2.?pit|hem|inseam|rise|thigh|knee|foot|eu|uk)\b/i;
   const tables = [];
 
   // Try labeled containers first (most reliable)
@@ -464,6 +469,136 @@ function extractSizeChartFromScriptTexts(scriptTexts) {
   return [];
 }
 
+// ── Price extraction ──────────────────────────────────────────────────────────
+
+const PRICE_CURRENCY_SYMBOLS = { USD: "$", EUR: "€", GBP: "£", JPY: "¥", CAD: "CA$", AUD: "A$" };
+
+function formatPrice(amount, currency) {
+  const sym = PRICE_CURRENCY_SYMBOLS[String(currency).toUpperCase()] || (currency ? `${currency} ` : "");
+  return `${sym}${amount}`.trim();
+}
+
+/** Extract price from a live DOM document. */
+function extractPrice(documentRef) {
+  // 1. JSON-LD offers.price
+  const scripts = Array.from(documentRef?.querySelectorAll?.("script[type='application/ld+json']") || []);
+  for (const script of scripts) {
+    try {
+      const json = JSON.parse(script.textContent);
+      const items = (Array.isArray(json) ? json : [json]).flatMap(flattenGraph);
+      for (const item of items) {
+        const offer = Array.isArray(item?.offers) ? item.offers[0] : item?.offers;
+        if (offer?.price) return formatPrice(offer.price, offer.priceCurrency || "");
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  // 2. Meta tags
+  const amount = getMeta(documentRef, "property", "product:price:amount") ||
+                 getMeta(documentRef, "property", "og:price:amount");
+  if (amount) {
+    const currency = getMeta(documentRef, "property", "product:price:currency") ||
+                     getMeta(documentRef, "property", "og:price:currency");
+    return formatPrice(amount, currency);
+  }
+
+  // 3. DOM selectors (prefer content attribute, fall back to text)
+  const priceSelectors = [
+    "[itemprop='price']",
+    "[data-product-price]",
+    "[data-price]",
+    ".price__regular",
+    ".price-item--regular",
+    "[class*='product-price' i]",
+    "[class*='price' i][class*='current' i]",
+    "#price"
+  ];
+  for (const sel of priceSelectors) {
+    const el = documentRef?.querySelector?.(sel);
+    if (!el) continue;
+    const raw = el.getAttribute?.("content") || el.getAttribute?.("data-price") || el.textContent;
+    const cleaned = clean(raw).replace(/\s+/g, "").slice(0, 40);
+    if (/[\d]/.test(cleaned)) return cleaned;
+  }
+
+  return "";
+}
+
+/** Extract price from raw HTML (no DOMParser). */
+function extractPriceFromHtml(html, pageText) {
+  // 1. JSON-LD
+  for (const scriptMatch of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const json = JSON.parse(scriptMatch[1]);
+      const items = (Array.isArray(json) ? json : [json]);
+      for (const item of items) {
+        const offer = Array.isArray(item?.offers) ? item.offers[0] : item?.offers;
+        if (offer?.price) return formatPrice(offer.price, offer.priceCurrency || "");
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  // 2. Meta tags
+  const amount = getMetaFromHtml(html, "property", "product:price:amount") ||
+                 getMetaFromHtml(html, "property", "og:price:amount");
+  if (amount) {
+    const currency = getMetaFromHtml(html, "property", "product:price:currency") || "";
+    return formatPrice(amount, currency);
+  }
+
+  // 3. itemprop="price" with content attribute
+  const ipMatch = html.match(/<[^>]+itemprop=["']price["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+  if (ipMatch) return clean(ipMatch[1]).slice(0, 40);
+
+  // 4. Look for a price-looking string near "price" keyword in page text
+  const priceLineMatch = pageText.match(/(?:price|cost)[\s:]*([€$£¥]?\s*\d[\d,.']*)/i);
+  if (priceLineMatch) return clean(priceLineMatch[1]).slice(0, 40);
+
+  return "";
+}
+
+// ── Category inference ────────────────────────────────────────────────────────
+
+const CATEGORY_PATTERNS = {
+  shoes: /\b(shoes?|sneakers?|trainers?|boots?|heels?|loafers?|sandals?|stilettos?|pumps?|mules?|clogs?|espadrilles?|oxfords?|derbys?|slingbacks?|footwear|slippers?|flats?)\b/g,
+  accessories: /\b(hats?|caps?|beanies?|bags?|handbags?|totes?|backpacks?|purses?|belts?|scarves?|scarfs?|gloves?|wallets?|card\s*holders?|jewelry|bracelets?|necklaces?|earrings?)\b/g,
+  bottoms: /\b(jeans?|pants?|trousers?|shorts?|skirts?|leggings?|joggers?|chinos?|bottoms?|denim)\b/g,
+  tops: /\b(shirts?|tees?|t-shirts?|tops?|sweaters?|hoodies?|jackets?|coats?|blouses?|tanks?|cardigans?|dresses?)\b/g
+};
+
+export function inferCategory(value) {
+  if (typeof value === "string") {
+    return inferCategory({ title: value });
+  }
+
+  const fields = [
+    { text: value?.title, weight: 8 },
+    { text: value?.url, weight: 6 },
+    { text: value?.description, weight: 4 },
+    { text: value?.pageText, weight: 1 }
+  ];
+  const scores = { tops: 0, bottoms: 0, shoes: 0, accessories: 0 };
+
+  for (const { text, weight } of fields) {
+    const normalized = String(text || "").toLowerCase();
+    if (!normalized) continue;
+
+    for (const [category, pattern] of Object.entries(CATEGORY_PATTERNS)) {
+      const matches = normalized.match(pattern);
+      if (matches?.length) {
+        scores[category] += matches.length * weight;
+      }
+    }
+  }
+
+  const ranked = Object.entries(scores).sort((left, right) => right[1] - left[1]);
+  if (!ranked[0]?.[1]) return "unknown";
+  if (ranked[0][1] === ranked[1]?.[1]) return "unknown";
+  return ranked[0][0];
+}
+
+// ── Shared helpers ────────────────────────────────────────────────────────────
+
 function tableToStructuredData(table) {
   const rows = Array.from(table.querySelectorAll("tr")).map((row) =>
     Array.from(row.querySelectorAll("th,td")).map((cell) => clean(cell.textContent))
@@ -494,18 +629,6 @@ function extractFitSignals(text) {
   }
 
   return signals;
-}
-
-export function inferCategory(value) {
-  const lower = String(value).toLowerCase();
-  // s? makes each term match both singular and plural (jean/jeans, pant/pants, etc.)
-  if (/\b(jeans?|pants?|trousers?|shorts?|skirts?|leggings?|joggers?|chinos?|bottoms?|denim)\b/.test(lower)) {
-    return "bottoms";
-  }
-  if (/\b(shirts?|tees?|t-shirts?|tops?|sweaters?|hoodies?|jackets?|coats?|blouses?|tanks?|cardigans?|dresses?)\b/.test(lower)) {
-    return "tops";
-  }
-  return "unknown";
 }
 
 function getText(documentRef, selectors) {
@@ -593,13 +716,32 @@ function dedupeSignals(signals) {
 
 function isLikelySize(value) {
   const size = cleanSize(value);
-  if (!size || /select|choose|size guide|sold out|unavailable/i.test(size)) return false;
-  if (SIZE_TOKENS.has(size.toUpperCase())) return true;
-  return /^(W?\d{1,2}(?:\s?x\s?\d{1,2})?|[0-9]{1,2}[A-Z]?|XXS|XS|S|M|L|XL|XXL|XXXL)$/i.test(size);
+  if (!size || /select|choose|size guide|sold out|out of stock|unavailable|notify me|coming soon/i.test(size)) return false;
+  if (SIZE_TOKENS.has(size.toUpperCase()) || SIZE_TOKENS.has(size)) return true;
+  // Alpha sizes, numeric clothing, waist×inseam, half sizes (e.g. 9.5, 10.5)
+  return /^(W?\d{1,2}(?:\s?[x×]\s?\d{1,2})?|\d{1,2}\.\d|[0-9]{1,2}[A-Z]?|XXS|XS|S|M|L|XL|XXL|XXXL|OS|O\/S|ONE SIZE)$/i.test(size);
 }
 
+/**
+ * Strip sold-out annotations and normalize size strings.
+ * Handles many real-world variants:
+ *   "XL - Sold Out"      "XL (Sold Out)"    "XL [Sold Out]"
+ *   "XL – Sold Out"      "XL / Sold Out"    "XL • Out of Stock"
+ *   "Sold Out - XL"      "(Out of Stock) XL"
+ *   "EU 42"              "EU42"              "US 10.5"
+ */
 function cleanSize(value) {
-  return clean(value).replace(/\s+/g, " ").replace(/\s+-\s+sold out/i, "");
+  return clean(value)
+    .replace(/\s+/g, " ")
+    // Sold-out / unavailable suffixes in various delimiters
+    .replace(/[\s\-–—/•]*[\[(]?(sold\s*out|out\s*of\s*stock|unavailable|not\s*available)[\])]?[\s\-–—/•]*/gi, " ")
+    // Sold-out / unavailable prefixes
+    .replace(/^[\[(]?(sold\s*out|out\s*of\s*stock|unavailable)[\])]?[\s\-–—/•]*/gi, "")
+    // Normalize EU/US/UK size prefix ("EU 42" → "42", "US 10.5" → "10.5")
+    .replace(/^(?:EU|US|UK)\s*/i, "")
+    .replace(/^one size$/i, "ONE SIZE")
+    .replace(/^o\/s$/i, "OS")
+    .trim();
 }
 
 function clean(value) {

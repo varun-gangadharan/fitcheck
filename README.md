@@ -1,8 +1,8 @@
 # Fitcheck
 
-Fitcheck is a Chrome extension (Manifest V3) that gives you a personalized size recommendation on fashion product pages. It extracts product data from the page, runs a local rules engine, optionally gathers web evidence from search APIs, and optionally uses Gemini to review and improve the recommendation — all without sending your profile data to any third-party server.
+Fitcheck is a Chrome extension (Manifest V3) that gives you a personalized size recommendation on fashion product pages. It accesses the current tab only after you open Fitcheck from the Chrome toolbar, extracts product data from that page, runs a local rules engine, optionally gathers web evidence from search APIs, and optionally uses Gemini to review and improve the recommendation.
 
-The extension communicates with a **local Node.js API** that you run yourself. Your Gemini and search API keys stay on your machine.
+The extension communicates with a **local Node.js API** that you run yourself on `127.0.0.1`. Your Gemini and search API keys stay on your machine.
 
 ---
 
@@ -12,8 +12,9 @@ The extension communicates with a **local Node.js API** that you run yourself. Y
 ┌─────────────────────────────────────────────────────┐
 │  Chrome Extension                                    │
 │                                                      │
-│  content-script.js   — floating panel UI, product   │
-│                         extraction from page DOM     │
+│  content-script.js   — injected on demand into the  │
+│                         current tab, panel UI, DOM  │
+│                         extraction                   │
 │  service-worker.js   — message bus, storage I/O,    │
 │                         API calls to local server    │
 │  popup.js            — toolbar icon → open panel    │
@@ -22,7 +23,7 @@ The extension communicates with a **local Node.js API** that you run yourself. Y
                     │ fetch POST /analyze
                     ▼
 ┌─────────────────────────────────────────────────────┐
-│  Local API  (Node.js, localhost:8787)                │
+│  Local API  (Node.js, 127.0.0.1:8787)                │
 │                                                      │
 │  server.js                — HTTP server, localhost   │
 │                             only (non-local → 403)   │
@@ -37,8 +38,8 @@ The extension communicates with a **local Node.js API** that you run yourself. Y
 ```
 
 **Data flow:**
-1. User opens a product page → content script extracts product, sizes, size chart, and fit signals from the DOM (including Shopify Hydrogen JSON, WooCommerce selects, Shopify radio inputs, div-based measurement charts).
-2. User clicks **Check sizing** → service worker reads profile, brand memory, and history from `chrome.storage.local`, then POST /analyze to the local API.
+1. User opens a product page and invokes Fitcheck from the toolbar → Fitcheck injects into the current tab and extracts product, sizes, size chart, and fit signals from the DOM.
+2. User clicks **Check sizing** → the service worker reads profile, brand memory, and history from `chrome.storage.local`, then POSTs `/analyze` to the local API.
 3. Local API runs the rules engine, optionally fetches web evidence, optionally calls Gemini, and returns a recommendation.
 4. Panel displays the recommendation. Marking an outcome (fit / too small / too big / returned) updates brand memory for future analyses.
 
@@ -88,6 +89,7 @@ Keep this running while you use the extension.
 2. Turn on **Developer mode**
 3. Click **Load unpacked** → select this repo folder
 4. Pin Fitcheck from the extensions toolbar
+5. Open Fitcheck from the toolbar while viewing a product page to grant current-tab access
 
 ### 5. Configure the extension
 
@@ -146,6 +148,15 @@ All variables are optional unless you want the corresponding feature.
 | `FITCHECK_SEARCH_PROVIDER` | `firecrawl` | Default search provider |
 
 The server loads `.env` from the repo root automatically. Never put API keys in the extension itself — the extension has no access to them by design.
+
+---
+
+## Chrome Web Store privacy posture
+
+- Fitcheck uses `activeTab` and `scripting`, so it only reads page content from the current tab after the user opens the extension.
+- User profile, history, and brand-memory data are stored locally in `chrome.storage.local`.
+- If the user enables optional web evidence or model-assisted mode, the local API may send product and profile context to the provider they configured.
+- Fitcheck does not sell data, run ads, or collect background browsing activity.
 
 ---
 
@@ -312,7 +323,7 @@ fitcheck/
 │   ├── background/
 │   │   └── service-worker.js  # Message bus, storage, API proxy
 │   ├── content/
-│   │   ├── content-script.js  # Panel UI (injected into every page)
+│   │   ├── content-script.js  # Panel UI (injected on demand into the current tab)
 │   │   └── panel.css
 │   ├── popup/
 │   │   ├── popup.html/js/css  # Toolbar icon popup

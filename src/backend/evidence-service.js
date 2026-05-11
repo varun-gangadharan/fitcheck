@@ -264,6 +264,38 @@ async function searchFirecrawl({ apiKey, query }) {
   }));
 }
 
+// ── Evidence quality scoring ──────────────────────────────────────────────────
+
+const SIZING_KEYWORDS = [
+  "size", "sizing", "fit", "fits", "runs", "small", "large", "tts", "true to size",
+  "size up", "size down", "chart", "measurement", "narrow", "wide", "snug", "loose",
+  "tight", "roomy", "half size", "too small", "too big"
+];
+const EXPERIENCE_KEYWORDS = ["review", "ordered", "bought", "wore", "tried", "return", "exchange"];
+
+const SPAM_PATTERNS = [
+  /youtube\.com|tiktok\.com|pinterest\.com/i,
+  /\bvideo\b|\bwatch\b|\bsubscribe\b/i,
+  /\bnew arrivals?\b|\bshop now\b|\badd to cart\b|\bbuy now\b/i,
+  /\bpromo\b|\bdiscount\b|\bcoupon\b|\bfree shipping\b/i,
+  /products?\s*\)|shop classic/i
+];
+
+/**
+ * Score a result by how many distinct sizing keywords appear in title + snippet.
+ * Returns 0 for spam/irrelevant results, higher values for more relevant ones.
+ */
+function scoreEvidenceResult(result) {
+  const text = `${result.title || ""} ${result.snippet || ""}`;
+  if (SPAM_PATTERNS.some((p) => p.test(text))) return 0;
+  const lower = text.toLowerCase();
+  const sizingHits = SIZING_KEYWORDS.filter((kw) => lower.includes(kw)).length;
+  if (!sizingHits) return 0;
+  const experienceHits = EXPERIENCE_KEYWORDS.filter((kw) => lower.includes(kw)).length;
+  const sourceBonus = /reddit|forum|review/i.test(result.source || "") ? 1 : 0;
+  return sizingHits * 2 + experienceHits + sourceBonus;
+}
+
 function compactSnippets(results) {
   const seen = new Set();
   return results
@@ -272,20 +304,17 @@ function compactSnippets(results) {
       title: cleanResultText(result.title),
       snippet: cleanResultText(result.snippet)
     }))
-    .filter((result) => result.url && result.snippet && isUsefulEvidenceResult(result))
+    .map((result) => ({ ...result, _score: scoreEvidenceResult(result) }))
+    .filter((result) => result.url && result.snippet && result._score >= 2)
+    .sort((a, b) => b._score - a._score)
     .filter((result) => {
       const key = `${result.url}:${result.snippet}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     })
-    .slice(0, 12);
-}
-
-function isUsefulEvidenceResult(result) {
-  const text = `${result.title} ${result.snippet}`.toLowerCase();
-  if (/youtube|video|products?\)|shop classic|new arrivals|sale/.test(text)) return false;
-  return /size|sizing|fit|fits|runs|tts|small|large|review|reddit|forum/.test(text);
+    .slice(0, 12)
+    .map(({ _score: _removed, ...rest }) => rest);
 }
 
 function emptyEvidence(reason, queries, status = "not_configured") {
@@ -337,9 +366,11 @@ function persistRateLimit() {
 
 function inferItemType(product) {
   const title = String(product.title || "").toLowerCase();
-  const match = title.match(/\b(shirt|tee|t-shirt|jean|pant|trouser|short|skirt|dress|hoodie|sweater|jacket|coat|top|legging)\b/);
+  const match = title.match(/\b(shirt|tee|t-shirt|jean|pant|trouser|short|skirt|dress|hoodie|sweater|jacket|coat|top|legging|sneaker|shoe|boot|heel|loafer|sandal|trainer)\b/);
   if (match) return match[1];
   if (product.category === "bottoms") return "bottoms";
+  if (product.category === "shoes") return "shoes";
+  if (product.category === "accessories") return "accessories";
   if (product.category === "tops") return "top";
   return "clothing";
 }

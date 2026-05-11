@@ -10,13 +10,21 @@ loadEnvFile();
 initEvidenceStore();
 
 const PORT = Number.parseInt(process.env.FITCHECK_API_PORT || "8787", 10);
-const HOST = process.env.FITCHECK_API_HOST || "0.0.0.0"; // bind to all interfaces when deployed
+const HOST = process.env.FITCHECK_API_HOST || "127.0.0.1";
 
 // chrome-extension://EXTENSION_ID — set this in production to lock CORS to
 // your published extension. Defaults to * (open) for local development.
 const ALLOWED_ORIGIN = process.env.FITCHECK_ALLOWED_ORIGIN || "*";
 
 const server = http.createServer(async (request, response) => {
+  if (!isLocalRequest(request.socket.remoteAddress)) {
+    sendJson(response, 403, {
+      error: "forbidden",
+      message: "Fitcheck API only accepts localhost connections."
+    });
+    return;
+  }
+
   const requestOrigin = request.headers["origin"] || "";
   setCorsHeaders(response, requestOrigin);
 
@@ -112,4 +120,8 @@ function setCorsHeaders(response, requestOrigin) {
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, { "content-type": "application/json" });
   response.end(JSON.stringify(payload));
+}
+
+function isLocalRequest(remoteAddress = "") {
+  return ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(remoteAddress);
 }

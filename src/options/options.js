@@ -54,11 +54,15 @@ form.addEventListener("submit", async (event) => {
     mode: data.get("mode"),
     usualSizes: {
       tops: clean(data.get("usualTops")),
-      bottoms: clean(data.get("usualBottoms"))
+      bottoms: clean(data.get("usualBottoms")),
+      shoes: clean(data.get("usualShoes")),
+      accessories: ""
     },
     fitPreference: {
       tops: data.get("fitTops"),
-      bottoms: data.get("fitBottoms")
+      bottoms: data.get("fitBottoms"),
+      shoes: data.get("fitShoes"),
+      accessories: "regular"
     },
     bodyNotes: clean(data.get("bodyNotes")),
     measurements: {
@@ -67,7 +71,8 @@ form.addEventListener("submit", async (event) => {
       hips: clean(data.get("hips")),
       inseam: clean(data.get("inseam")),
       shoulderWidth: clean(data.get("shoulderWidth")),
-      height: clean(data.get("height"))
+      height: clean(data.get("height")),
+      footLength: clean(data.get("footLength"))
     }
   };
 
@@ -147,8 +152,10 @@ function fillForm(profile) {
   form.elements.mode.value = profile.mode;
   form.elements.usualTops.value = profile.usualSizes?.tops || "";
   form.elements.usualBottoms.value = profile.usualSizes?.bottoms || "";
+  form.elements.usualShoes.value = profile.usualSizes?.shoes || "";
   form.elements.fitTops.value = profile.fitPreference?.tops || "regular";
   form.elements.fitBottoms.value = profile.fitPreference?.bottoms || "regular";
+  form.elements.fitShoes.value = profile.fitPreference?.shoes || "regular";
   form.elements.bodyNotes.value = profile.bodyNotes || "";
   form.elements.chestBust.value = profile.measurements?.chestBust || "";
   form.elements.waist.value = profile.measurements?.waist || "";
@@ -156,6 +163,7 @@ function fillForm(profile) {
   form.elements.inseam.value = profile.measurements?.inseam || "";
   form.elements.shoulderWidth.value = profile.measurements?.shoulderWidth || "";
   form.elements.height.value = profile.measurements?.height || "";
+  form.elements.footLength.value = profile.measurements?.footLength || "";
 }
 
 function renderBrandNotes(brandNotes) {

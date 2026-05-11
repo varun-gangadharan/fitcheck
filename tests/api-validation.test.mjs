@@ -14,7 +14,7 @@ test("validation rejects incomplete product payloads", () => {
     product: {
       title: "",
       url: "",
-      category: "shoes",
+      category: "outerwear",
       sizeOptions: "M"
     },
     profile: {
@@ -25,8 +25,38 @@ test("validation rejects incomplete product payloads", () => {
 
   assert.ok(errors.includes("product.title is required."));
   assert.ok(errors.includes("product.url is required."));
-  assert.ok(errors.includes("product.category must be tops, bottoms, or unknown."));
+  assert.ok(errors.includes("product.category must be tops, bottoms, shoes, accessories, or unknown."));
   assert.ok(errors.includes("product.sizeOptions must be an array."));
+});
+
+test("validation accepts shoes and accessories categories", () => {
+  const shoeErrors = validateAnalyzeRequest({
+    product: {
+      title: "Air Trainer Pro",
+      url: "https://shop.example/shoe",
+      category: "shoes",
+      sizeOptions: ["9", "9.5", "10"]
+    },
+    profile: {
+      mode: "lightweight",
+      usualSizes: { shoes: "10" }
+    }
+  });
+  const accessoryErrors = validateAnalyzeRequest({
+    product: {
+      title: "Canvas Belt Bag",
+      url: "https://shop.example/bag",
+      category: "accessories",
+      sizeOptions: ["ONE SIZE"]
+    },
+    profile: {
+      mode: "lightweight",
+      usualSizes: { tops: "M" }
+    }
+  });
+
+  assert.deepEqual(shoeErrors, []);
+  assert.deepEqual(accessoryErrors, []);
 });
 
 test("validation accepts minimal valid analyze payload", () => {

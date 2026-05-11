@@ -92,6 +92,10 @@
               Bottoms
               <input name="usualBottoms" autocomplete="off">
             </label>
+            <label>
+              Shoes <span class="field-hint">(US, EU, or UK)</span>
+              <input name="usualShoes" autocomplete="off" placeholder="e.g. 10 or EU 43">
+            </label>
           </div>
         </section>
 
@@ -114,6 +118,14 @@
                 <option value="relaxed">Relaxed</option>
               </select>
             </label>
+            <label>
+              Shoes
+              <select name="fitShoes">
+                <option value="snug">Snug (prefer tight)</option>
+                <option value="regular">Regular</option>
+                <option value="relaxed">Relaxed (prefer roomy)</option>
+              </select>
+            </label>
           </div>
         </section>
 
@@ -126,6 +138,7 @@
             <label>Inseam <input name="inseam" inputmode="decimal"></label>
             <label>Shoulder width <input name="shoulderWidth" inputmode="decimal"></label>
             <label>Height <input name="height" autocomplete="off"></label>
+            <label>Foot length (cm) <input name="footLength" inputmode="decimal" placeholder="e.g. 27.5"></label>
           </div>
         </section>
 
@@ -147,6 +160,8 @@
                 <option value="unknown">Unknown</option>
                 <option value="tops">Tops</option>
                 <option value="bottoms">Bottoms</option>
+                <option value="shoes">Shoes</option>
+                <option value="accessories">Accessories</option>
               </select>
             </label>
             <label>

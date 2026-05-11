@@ -1,9 +1,9 @@
 /**
- * @typedef {"tops" | "bottoms" | "unknown"} ProductCategory
+ * @typedef {"tops" | "bottoms" | "shoes" | "accessories" | "unknown"} ProductCategory
  * @typedef {"lightweight" | "exact"} ProfileMode
  * @typedef {"snug" | "regular" | "relaxed"} FitPreference
  * @typedef {"fit" | "too_small" | "too_big" | "returned"} FitOutcome
- * @typedef {"runs_small" | "runs_large" | "true_to_size" | "oversized" | "slim_fit" | "relaxed_fit" | "stretch" | "non_stretch"} FitSignalType
+ * @typedef {"runs_small" | "runs_large" | "true_to_size" | "oversized" | "slim_fit" | "relaxed_fit" | "stretch" | "non_stretch" | "runs_narrow" | "runs_wide" | "half_size_up"} FitSignalType
  *
  * @typedef {Object} SizeChartTable
  * @property {string} caption
@@ -15,6 +15,7 @@
  * @property {string} brand
  * @property {string} title
  * @property {ProductCategory} category
+ * @property {string} price
  * @property {string[]} sizeOptions
  * @property {{ sourceText: string, tables: SizeChartTable[] }} sizeChart
  * @property {string} fabricComposition
@@ -32,17 +33,21 @@ export const STORAGE_KEYS = {
   analysisResults: "fitcheck:analysisResults"
 };
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 export const DEFAULT_PROFILE = {
   mode: "lightweight",
   usualSizes: {
     tops: "M",
-    bottoms: "32"
+    bottoms: "32",
+    shoes: "",
+    accessories: ""
   },
   fitPreference: {
     tops: "regular",
-    bottoms: "regular"
+    bottoms: "regular",
+    shoes: "regular",
+    accessories: "regular"
   },
   bodyNotes: "",
   measurements: {
@@ -51,7 +56,8 @@ export const DEFAULT_PROFILE = {
     hips: "",
     inseam: "",
     shoulderWidth: "",
-    height: ""
+    height: "",
+    footLength: ""
   },
   updatedAt: null
 };
@@ -67,11 +73,13 @@ export const EMPTY_BRAND_NOTE = {
     too_big: 0,
     returned: 0
   },
+  /** Numeric bias in [-2, 2] derived from outcomes. Positive = size up. */
+  bias: 0,
   notes: "",
   updatedAt: null
 };
 
-export const PRODUCT_CATEGORIES = ["tops", "bottoms", "unknown"];
+export const PRODUCT_CATEGORIES = ["tops", "bottoms", "shoes", "accessories", "unknown"];
 export const FIT_PREFERENCES = ["snug", "regular", "relaxed"];
 export const FIT_OUTCOMES = ["fit", "too_small", "too_big", "returned"];
 
@@ -80,6 +88,7 @@ export const EMPTY_PRODUCT_RECORD = {
   brand: "",
   title: "",
   category: "unknown",
+  price: "",
   sizeOptions: [],
   sizeChart: {
     sourceText: "",

@@ -8,6 +8,8 @@ import {
 } from "../shared/storage.js";
 import { analyzeFit } from "../backend/recommendation-engine.js";
 
+const CONTENT_SCRIPT_FILE = "src/content/content-script.js";
+
 // Open the options page on fresh install so users can configure their profile.
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === "install") {
@@ -37,8 +39,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === "FITCHECK_ENSURE_CONTENT_SCRIPT") {
+    ensureContentScript(message.tabId)
+      .then(() => sendResponse({ ok: true }))
+      .catch((error) => sendResponse({ ok: false, error: friendlyError(error) }));
+    return true;
+  }
+
   return false;
 });
+
+async function ensureContentScript(tabId) {
+  if (!Number.isInteger(tabId)) {
+    throw new Error("Missing active tab.");
+  }
+
+  try {
+    const existing = await chrome.tabs.sendMessage(tabId, { type: "FITCHECK_PING" });
+    if (existing?.ok) return;
+  } catch (_error) {
+    // Content script is not injected yet — continue to injection.
+  }
+
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: [CONTENT_SCRIPT_FILE]
+  });
+}
 
 async function analyzeProduct(product) {
   try {
@@ -160,6 +187,9 @@ function isNetworkError(error) {
 
 function friendlyError(error) {
   const msg = error.message || "";
+  if (/Cannot access|Cannot inject|Missing host permission|chrome:\/\/|Edge Add-ons/i.test(msg)) {
+    return "Fitcheck can only run on normal shopping pages after you open it from the toolbar.";
+  }
   // Network / API unreachable — check this FIRST so connection errors are
   // never misclassified as storage errors (both could mention "storage").
   if (isNetworkError(error)) {

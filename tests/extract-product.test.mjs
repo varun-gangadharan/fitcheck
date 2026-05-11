@@ -23,6 +23,7 @@ test("extracts normalized top product details", async () => {
   assert.match(product.returnPolicy, /30 days/i);
   assert.ok(product.fitSignals.some((signal) => signal.type === "oversized"));
   assert.ok(product.fitSignals.some((signal) => signal.type === "relaxed_fit"));
+  assert.equal(product.price, "");
 });
 
 test("extracts normalized bottom product details", async () => {
@@ -160,4 +161,32 @@ test("extracts product without size chart and flags it as missing", async () => 
   assert.ok(product.extractedSignals.missingFields.includes("sizeChart"), "Should flag missing chart");
   assert.ok(product.fitSignals.some((s) => s.type === "runs_large"), "Should detect 'runs large'");
   assert.ok(product.fitSignals.some((s) => s.type === "oversized"), "Should detect 'oversized'");
+});
+
+test("extracts shoes with sold-out variants cleaned and price preserved", async () => {
+  const product = extractProductFromHtml(await fixture("shoes-product.html"), {
+    url: "https://stride.example/products/air-trainer-pro"
+  });
+
+  assert.equal(product.category, "shoes");
+  assert.equal(product.brand, "Stride Collective");
+  assert.equal(product.price, "$130");
+  assert.ok(product.sizeOptions.includes("10.5"), `sizeOptions: ${product.sizeOptions.join(", ")}`);
+  assert.ok(product.sizeOptions.includes("11.5"), `sizeOptions: ${product.sizeOptions.join(", ")}`);
+  assert.ok(!product.sizeOptions.some((size) => /sold out|stock/i.test(size)));
+  assert.ok(product.fitSignals.some((signal) => signal.type === "runs_narrow"));
+  assert.ok(product.fitSignals.some((signal) => signal.type === "half_size_up"));
+  assert.ok(product.sizeChart.tables[0].columns.some((column) => /foot length/i.test(column)));
+});
+
+test("extracts accessories with one-size options", async () => {
+  const product = extractProductFromHtml(await fixture("accessory-product.html"), {
+    url: "https://orbit.example/products/canvas-belt-bag"
+  });
+
+  assert.equal(product.category, "accessories");
+  assert.equal(product.price, "48.00");
+  assert.deepEqual(product.sizeOptions, ["ONE SIZE"]);
+  assert.match(product.fabricComposition, /recycled nylon/i);
+  assert.match(product.returnPolicy, /14 days/i);
 });

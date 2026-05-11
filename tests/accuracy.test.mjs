@@ -49,6 +49,23 @@ const BOTTOMS_CHART = {
   ]
 };
 
+const SHOES_CHART = {
+  sourceText: "Shoe size guide",
+  tables: [
+    {
+      caption: "",
+      columns: ["US", "EU", "Foot Length (cm)"],
+      rows: [
+        { US: "8", EU: "41", "Foot Length (cm)": "26.0" },
+        { US: "8.5", EU: "41.5", "Foot Length (cm)": "26.5" },
+        { US: "9", EU: "42", "Foot Length (cm)": "27.0" },
+        { US: "9.5", EU: "42.5", "Foot Length (cm)": "27.5" },
+        { US: "10", EU: "43", "Foot Length (cm)": "28.0" }
+      ]
+    }
+  ]
+};
+
 const baseTop = {
   url: "https://shop.example/top",
   brand: "Acme",
@@ -83,6 +100,18 @@ const exactProfile = {
   usualSizes: { tops: "M", bottoms: "30" },
   fitPreference: { tops: "regular", bottoms: "regular" },
   measurements: { chestBust: "41", waist: "31" }
+};
+
+const shoeProduct = {
+  url: "https://shop.example/shoe",
+  brand: "Stride",
+  title: "Air Trainer Pro",
+  category: "shoes",
+  price: "$130",
+  sizeOptions: ["8", "8.5", "9", "9.5", "10"],
+  sizeChart: SHOES_CHART,
+  fitSignals: [],
+  extractedSignals: { missingFields: [] }
 };
 
 // ---------------------------------------------------------------------------
@@ -329,4 +358,19 @@ test("accuracy: result always has required fields with correct types", () => {
   assert.ok(Array.isArray(result.evidenceSnippets));
   assert.ok(Array.isArray(result.ruleSignals));
   assert.ok(typeof result.timestamp === "string");
+});
+
+test("accuracy: exact shoe mode, foot length=27.5 → chart maps to 9.5", () => {
+  const result = analyzeFit({
+    product: shoeProduct,
+    profile: {
+      mode: "exact",
+      usualSizes: { shoes: "EU 43" },
+      fitPreference: { shoes: "regular" },
+      measurements: { footLength: "27.5" }
+    }
+  });
+
+  assert.equal(result.suggestedSize, "9.5");
+  assert.ok(result.ruleSignals.some((signal) => signal.id === "measurement_chart_match"));
 });

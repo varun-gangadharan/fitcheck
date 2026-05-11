@@ -151,3 +151,78 @@ test("prompt builder requests strict JSON and includes context", () => {
   assert.match(prompt.user, /Cotton Shirt/);
   assert.match(prompt.user, /suggestedSize/);
 });
+
+test("shoe sizing maps EU profile size through the chart", () => {
+  const analysis = analyzeFit({
+    product: {
+      url: "https://shop.example/shoes",
+      brand: "Stride",
+      title: "Air Trainer Pro",
+      category: "shoes",
+      price: "$130",
+      sizeOptions: ["8", "8.5", "9", "9.5", "10", "10.5", "11"],
+      sizeChart: {
+        sourceText: "Shoe size chart",
+        tables: [
+          {
+            caption: "",
+            columns: ["US", "EU", "Foot Length (cm)"],
+            rows: [
+              { US: "8", EU: "41", "Foot Length (cm)": "26.0" },
+              { US: "9", EU: "42", "Foot Length (cm)": "27.0" },
+              { US: "10", EU: "43", "Foot Length (cm)": "28.0" },
+              { US: "11", EU: "44", "Foot Length (cm)": "29.0" }
+            ]
+          }
+        ]
+      },
+      fitSignals: [],
+      extractedSignals: { missingFields: [] }
+    },
+    profile: {
+      mode: "lightweight",
+      usualSizes: { shoes: "EU 43" },
+      fitPreference: { shoes: "regular" },
+      measurements: {}
+    }
+  });
+
+  assert.equal(analysis.suggestedSize, "10");
+});
+
+test("accessories default to one-size instead of clothing fallback", () => {
+  const analysis = analyzeFit({
+    product: {
+      url: "https://shop.example/bag",
+      brand: "Orbit",
+      title: "Canvas Belt Bag",
+      category: "accessories",
+      price: "$48",
+      sizeOptions: ["ONE SIZE"],
+      sizeChart: { sourceText: "", tables: [] },
+      fitSignals: [],
+      extractedSignals: { missingFields: [] }
+    },
+    profile: {
+      mode: "lightweight",
+      usualSizes: { tops: "M" },
+      fitPreference: { tops: "regular" },
+      measurements: {}
+    }
+  });
+
+  assert.equal(analysis.suggestedSize, "ONE SIZE");
+});
+
+test("premium price increases downside when fit risk is already elevated", () => {
+  const analysis = analyzeFit({
+    product: {
+      ...topProduct,
+      price: "$220",
+      fitSignals: [{ type: "runs_small", label: "Runs small", text: "Runs small." }]
+    },
+    profile: baseProfile
+  });
+
+  assert.ok(analysis.ruleSignals.some((signal) => signal.id === "premium_price_risk"));
+});
