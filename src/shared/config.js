@@ -29,8 +29,7 @@ export const DEFAULT_CONFIG = {
   apiUrl: DEFAULT_API_URL,
   analysisMode: "rules_only",
   webEvidenceEnabled: false,
-  searchProvider: "firecrawl",
-  geminiApiKey: ""
+  searchProvider: "firecrawl"
 };
 
 export const CONFIG_STORAGE_KEY = STORAGE_KEYS.config;

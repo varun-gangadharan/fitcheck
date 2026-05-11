@@ -9,6 +9,10 @@
     "build": "npm run validate",
     "dev": "npm run validate",
     "test": "node --test tests/*.test.mjs",
+    "test:smoke": "node --test tests/smoke/smoke.test.mjs",
     "validate": "node scripts/validate-extension.mjs"
+  },
+  "devDependencies": {
+    "puppeteer": "^22.15.0"
   }
 }

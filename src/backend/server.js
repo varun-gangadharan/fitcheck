@@ -1,15 +1,23 @@
 import http from "node:http";
 import { loadEnvFile } from "./env.js";
+import { initEvidenceStore } from "./evidence-service.js";
 import { runAnalysis } from "./analysis-orchestrator.js";
 import { validateAnalyzeRequest } from "./validation.js";
 
 loadEnvFile();
+initEvidenceStore();
 
 const PORT = Number.parseInt(process.env.FITCHECK_API_PORT || "8787", 10);
 const HOST = process.env.FITCHECK_API_HOST || "127.0.0.1";
 
 const server = http.createServer(async (request, response) => {
   setCorsHeaders(response);
+
+  const remoteIp = request.socket.remoteAddress;
+  if (remoteIp !== "127.0.0.1" && remoteIp !== "::1" && remoteIp !== "::ffff:127.0.0.1") {
+    sendJson(response, 403, { error: "forbidden", message: "Fitcheck API only accepts local connections." });
+    return;
+  }
 
   if (request.method === "OPTIONS") {
     response.writeHead(204);

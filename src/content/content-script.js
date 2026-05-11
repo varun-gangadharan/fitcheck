@@ -227,29 +227,9 @@
         <button type="button" class="fitcheck-icon-button" aria-label="Close Fitcheck" data-fitcheck-close>×</button>
       </header>
 
-      <section class="fitcheck-panel__meta">
-        <span>${escapeHtml(product.category)}</span>
-        <span>${escapeHtml(profileModeLabel())}</span>
-      </section>
+      ${panelState !== "complete" ? stateMarkup(panelState) : ""}
 
-      ${stateMarkup(panelState)}
-
-      <section class="fitcheck-panel__score" aria-live="polite">
-        <div>
-          <span>Fit risk</span>
-          <strong>${analysis ? `${analysis.riskScore}/100` : "--"}</strong>
-        </div>
-        <div>
-          <span>Confidence</span>
-          <strong>${analysis ? `${Math.round(analysis.confidence * 100)}%` : "--"}</strong>
-        </div>
-      </section>
-
-      <section class="fitcheck-panel__recommendation">
-        <p>Suggested size</p>
-        <strong>${analysis ? escapeHtml(analysis.suggestedSize) : "Analyze first"}</strong>
-        <span>Backup: ${analysis ? escapeHtml(analysis.backupSize) : "--"}</span>
-      </section>
+      ${recommendationMarkup(analysis)}
 
       ${analysis ? analysisMarkup(analysis) : productSummaryMarkup(product)}
 
@@ -260,11 +240,11 @@
 
       <footer class="fitcheck-panel__footer">
         <button type="button" class="fitcheck-primary-button" data-fitcheck-analyze ${state.status === "loading" ? "disabled" : ""}>
-          ${state.status === "loading" ? "Analyzing..." : "Analyze"}
+          ${state.status === "loading" ? "Checking\u2026" : "Check sizing"}
         </button>
         <button type="button" data-fitcheck-save-note>Save note</button>
         <button type="button" data-fitcheck-expand aria-expanded="${state.detailsOpen}" aria-controls="${DETAIL_ID}">
-          ${state.detailsOpen ? "Hide details" : "Expand details"}
+          ${state.detailsOpen ? "Hide details" : "Size chart & sources"}
         </button>
       </footer>
     `;
@@ -284,19 +264,65 @@
   }
 
   function stateMarkup(panelState) {
-    const messages = {
-      no_product: ["No product detected", "Fitcheck could not find a product title or size options on this page."],
-      ready: ["Ready to analyze", "Visible product details were extracted from this page."],
-      loading: ["Analyzing", "Sending extracted product data to the local Fitcheck API."],
-      not_enough_evidence: ["Not enough evidence", "The result has low confidence because key product or web evidence is missing."],
-      complete: ["Analysis complete", "Recommendation is ready."],
-      error: ["Error", state.error || "Something went wrong."]
+    const stateConfig = {
+      no_product: { title: "No item found", body: "Open a specific product page to use Fitcheck.", modifier: "neutral" },
+      ready: { title: "Item found", body: "Tap \u201cCheck sizing\u201d to see your recommendation.", modifier: "neutral" },
+      loading: { title: "Checking your size\u2026", body: "Pulling sizing signals for this item.", modifier: "neutral" },
+      not_enough_evidence: { title: "Low confidence result", body: "Limited sizing data available. The suggestion is a starting point \u2014 check the size chart if in doubt.", modifier: "warning" },
+      complete: null,
+      error: { title: "Something went wrong", body: state.error || "Check that the Fitcheck server is running.", modifier: "error" }
     };
-    const [title, body] = messages[panelState];
-    return `<section class="fitcheck-panel__state fitcheck-panel__state--${panelState}">
-      <strong>${escapeHtml(title)}</strong>
-      <span>${escapeHtml(body)}</span>
+
+    const config = stateConfig[panelState];
+    if (!config) {
+      return "";
+    }
+
+    return `<section class="fitcheck-panel__state fitcheck-panel__state--${config.modifier}">
+      <strong>${escapeHtml(config.title)}</strong>
+      <span>${escapeHtml(config.body)}</span>
     </section>`;
+  }
+
+  function confidenceBadge(confidence) {
+    if (confidence >= 0.7) {
+      return { level: "high", text: "High confidence" };
+    }
+    if (confidence >= 0.35) {
+      return { level: "medium", text: "Medium confidence" };
+    }
+    return { level: "low", text: "Low confidence" };
+  }
+
+  function recommendationMarkup(analysis) {
+    if (!analysis) {
+      return `
+        <section class="fitcheck-panel__hero fitcheck-panel__hero--empty">
+          <p class="fitcheck-panel__hero-label">Recommended size</p>
+          <strong class="fitcheck-panel__hero-size">\u2014</strong>
+          <span class="fitcheck-panel__hero-sub">Run a check to see your recommendation</span>
+        </section>
+      `;
+    }
+
+    const badge = confidenceBadge(analysis.confidence);
+    const backupHtml = analysis.backupSize
+      ? `<span class="fitcheck-panel__hero-backup">If unavailable: ${escapeHtml(analysis.backupSize)}</span>`
+      : "";
+
+    return `
+      <section class="fitcheck-panel__hero">
+        <div class="fitcheck-panel__hero-main">
+          <div>
+            <p class="fitcheck-panel__hero-label">Try size</p>
+            <strong class="fitcheck-panel__hero-size">${escapeHtml(analysis.suggestedSize)}</strong>
+            ${backupHtml}
+          </div>
+          <span class="fitcheck-panel__confidence fitcheck-panel__confidence--${badge.level}">${escapeHtml(badge.text)}</span>
+        </div>
+        <p class="fitcheck-panel__explanation">${escapeHtml(analysis.explanation)}</p>
+      </section>
+    `;
   }
 
   function productSummaryMarkup(product) {
@@ -312,17 +338,22 @@
   }
 
   function analysisMarkup(analysis) {
+    const snippets = (analysis.evidenceSnippets || []).slice(0, 3);
+    const evidenceHtml = snippets.length
+      ? `<ul class="fitcheck-panel__evidence">${snippets.map((snippet) => `<li>${escapeHtml(snippet)}</li>`).join("")}</ul>`
+      : "";
+
     return `
       <section class="fitcheck-panel__details">
-        <p>${escapeHtml(analysis.explanation)}</p>
-        <ul>
-          ${analysis.evidenceSnippets.map((snippet) => `<li>${escapeHtml(snippet)}</li>`).join("")}
-        </ul>
-        <section class="fitcheck-panel__outcomes" aria-label="Mark fit outcome">
-          <button type="button" data-fitcheck-outcome="fit">Fit</button>
-          <button type="button" data-fitcheck-outcome="too_small">Too small</button>
-          <button type="button" data-fitcheck-outcome="too_big">Too big</button>
-          <button type="button" data-fitcheck-outcome="returned">Returned</button>
+        ${evidenceHtml}
+        <section class="fitcheck-panel__outcomes" aria-label="Did it fit?">
+          <p class="fitcheck-panel__outcomes-prompt">Did you buy it? Mark how it fit:</p>
+          <div class="fitcheck-panel__outcomes-grid">
+            <button type="button" data-fitcheck-outcome="fit">It fits</button>
+            <button type="button" data-fitcheck-outcome="too_small">Too small</button>
+            <button type="button" data-fitcheck-outcome="too_big">Too big</button>
+            <button type="button" data-fitcheck-outcome="returned">I returned it</button>
+          </div>
         </section>
         ${detailsMarkup(state.product)}
       </section>
@@ -383,10 +414,6 @@
         </table>
       </div>
     `;
-  }
-
-  function profileModeLabel() {
-    return state.profile?.mode === "exact" ? "Exact profile" : "Lightweight profile";
   }
 
   function extractProduct() {

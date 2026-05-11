@@ -1,7 +1,14 @@
+import { DEFAULT_CACHE_DIR, createNullStore, createStore } from "./persistent-store.js";
+
 const CACHE_TTL_MS = 1000 * 60 * 30;
 const MAX_SEARCHES_PER_MINUTE = 20;
+
+// In-memory state — hydrated from disk by initEvidenceStore(), used every run.
 const cache = new Map();
-const recentSearches = [];
+const recentSearchesByProvider = {}; // { [provider]: number[] }
+
+// Active persistence store — null-op until initEvidenceStore() is called.
+let activeStore = createNullStore();
 
 const SIGNAL_PATTERNS = [
   { signal: "runsSmall", engineType: "runs_small", pattern: /\bruns?\s+small\b|\bfit(?:s)?\s+small\b/i },
@@ -11,6 +18,40 @@ const SIGNAL_PATTERNS = [
   { signal: "sizeDown", engineType: "runs_large", pattern: /\bsize\s+down\b|\bgo\s+down\b|\border\s+down\b/i },
   { signal: "inconsistent", engineType: "inconsistent", pattern: /\binconsistent\b|\bvaries\b|\bmixed\b|\bhit\s+or\s+miss\b/i }
 ];
+
+/**
+ * Switch to file-backed persistence and hydrate in-memory state from disk.
+ * Call once at server startup. Safe to call again (replaces the active store).
+ *
+ * @param {string} [dirPath] - Directory for cache files. Defaults to DEFAULT_CACHE_DIR.
+ */
+export function initEvidenceStore(dirPath = DEFAULT_CACHE_DIR) {
+  // Reset in-memory state so stale entries from a previous store don't carry over.
+  cache.clear();
+  for (const key of Object.keys(recentSearchesByProvider)) {
+    delete recentSearchesByProvider[key];
+  }
+
+  const store = createStore(dirPath);
+  activeStore = store;
+
+  // Hydrate cache from disk.
+  const savedCache = store.readCache();
+  for (const [key, entry] of Object.entries(savedCache)) {
+    if (entry && typeof entry.cachedAt === "number") {
+      cache.set(key, entry);
+    }
+  }
+
+  // Hydrate rate-limit state, dropping timestamps outside the 1-minute window.
+  const savedRateLimit = store.readRateLimit();
+  const cutoff = Date.now() - 60_000;
+  for (const [provider, timestamps] of Object.entries(savedRateLimit)) {
+    if (Array.isArray(timestamps)) {
+      recentSearchesByProvider[provider] = timestamps.filter((t) => t > cutoff);
+    }
+  }
+}
 
 export async function gatherEvidence(product, options = {}) {
   const provider = options.provider || process.env.FITCHECK_SEARCH_PROVIDER || "firecrawl";
@@ -25,7 +66,7 @@ export async function gatherEvidence(product, options = {}) {
     return emptyEvidence(`No ${provider} search provider API key is configured.`, queries, "not_configured");
   }
 
-  if (isRateLimited()) {
+  if (isRateLimited(provider)) {
     return emptyEvidence("Search rate limit reached. Using product-page evidence only.", queries);
   }
 
@@ -54,7 +95,10 @@ export async function gatherEvidence(product, options = {}) {
     cache: { hit: false, ttlMs: CACHE_TTL_MS }
   };
 
-  cache.set(cacheKey, { cachedAt: Date.now(), value });
+  const entry = { cachedAt: Date.now(), value };
+  cache.set(cacheKey, entry);
+  persistCache();
+
   return value;
 }
 
@@ -154,7 +198,7 @@ async function searchProvider({ provider, apiKey, query }) {
 }
 
 async function searchBrave({ apiKey, query }) {
-  noteSearch();
+  noteSearch("brave");
   const url = new URL("https://api.search.brave.com/res/v1/web/search");
   url.searchParams.set("q", query);
   url.searchParams.set("count", "5");
@@ -181,7 +225,7 @@ async function searchBrave({ apiKey, query }) {
 }
 
 async function searchFirecrawl({ apiKey, query }) {
-  noteSearch();
+  noteSearch("firecrawl");
   const response = await fetch("https://api.firecrawl.dev/v2/search", {
     method: "POST",
     headers: {
@@ -257,16 +301,32 @@ function providerApiKey(provider) {
   return "";
 }
 
-function isRateLimited() {
+function isRateLimited(provider) {
   const now = Date.now();
-  while (recentSearches.length && now - recentSearches[0] > 60_000) {
-    recentSearches.shift();
-  }
-  return recentSearches.length >= MAX_SEARCHES_PER_MINUTE;
+  const timestamps = recentSearchesByProvider[provider] || [];
+  const recent = timestamps.filter((t) => now - t < 60_000);
+  recentSearchesByProvider[provider] = recent;
+  return recent.length >= MAX_SEARCHES_PER_MINUTE;
 }
 
-function noteSearch() {
-  recentSearches.push(Date.now());
+function noteSearch(provider) {
+  if (!recentSearchesByProvider[provider]) {
+    recentSearchesByProvider[provider] = [];
+  }
+  recentSearchesByProvider[provider].push(Date.now());
+  persistRateLimit();
+}
+
+function persistCache() {
+  const obj = {};
+  for (const [key, entry] of cache.entries()) {
+    obj[key] = entry;
+  }
+  activeStore.writeCache(obj);
+}
+
+function persistRateLimit() {
+  activeStore.writeRateLimit({ ...recentSearchesByProvider });
 }
 
 function inferItemType(product) {

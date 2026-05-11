@@ -43,9 +43,7 @@
   line-height: 1.25;
 }
 
-.fitcheck-panel__eyebrow,
-.fitcheck-panel__recommendation p,
-.fitcheck-panel__score span {
+.fitcheck-panel__eyebrow {
   margin: 0;
   color: #5d6a5f;
   font-size: 11px;
@@ -69,23 +67,6 @@
   cursor: pointer;
   font-size: 22px;
   line-height: 32px;
-}
-
-.fitcheck-panel__meta {
-  display: flex;
-  gap: 8px;
-  padding: 10px 14px;
-  border-bottom: 1px solid #e3e7e1;
-}
-
-.fitcheck-panel__meta span {
-  padding: 4px 8px;
-  border: 1px solid #d9ded8;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #465249;
-  font-size: 12px;
-  font-weight: 700;
 }
 
 .fitcheck-panel__state {
@@ -113,46 +94,113 @@
   color: #8a2d1c;
 }
 
-.fitcheck-panel__state--not_enough_evidence {
+.fitcheck-panel__state--warning {
   background: #fff8e8;
 }
 
-.fitcheck-panel__score {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.fitcheck-panel__state--warning span {
+  color: #7a5200;
+}
+
+/* Hero section */
+.fitcheck-panel__hero {
+  padding: 16px 14px 14px;
   border-bottom: 1px solid #e3e7e1;
 }
 
-.fitcheck-panel__score div {
-  display: grid;
-  gap: 2px;
-  padding: 14px;
+.fitcheck-panel__hero--empty .fitcheck-panel__hero-size {
+  color: #a3afa5;
 }
 
-.fitcheck-panel__score div + div {
-  border-left: 1px solid #e3e7e1;
+.fitcheck-panel__hero-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-.fitcheck-panel__score strong {
-  font-size: 24px;
+.fitcheck-panel__hero-label {
+  margin: 0 0 2px;
+  color: #5d6a5f;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
-.fitcheck-panel__recommendation {
-  padding: 14px;
-  border-bottom: 1px solid #e3e7e1;
+.fitcheck-panel__hero-size {
+  display: block;
+  font-size: 36px;
+  line-height: 1;
+  letter-spacing: -0.5px;
 }
 
-.fitcheck-panel__recommendation strong {
+.fitcheck-panel__hero-backup {
   display: block;
   margin-top: 4px;
-  font-size: 30px;
+  color: #5d6a5f;
+  font-size: 12px;
 }
 
-.fitcheck-panel__recommendation span {
+.fitcheck-panel__hero-sub {
   display: block;
-  margin-top: 2px;
-  color: #465249;
+  margin-top: 6px;
+  color: #5d6a5f;
   font-size: 13px;
+}
+
+.fitcheck-panel__explanation {
+  margin: 0;
+  color: #243027;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+/* Confidence badge */
+.fitcheck-panel__confidence {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.fitcheck-panel__confidence--high {
+  background: #dff2e5;
+  color: #1a5e32;
+}
+
+.fitcheck-panel__confidence--medium {
+  background: #fff3cd;
+  color: #7a5200;
+}
+
+.fitcheck-panel__confidence--low {
+  background: #ffe5e0;
+  color: #8a2d1c;
+}
+
+/* Evidence list */
+.fitcheck-panel__evidence {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  color: #465249;
+  font-size: 12px;
+}
+
+.fitcheck-panel__evidence li + li {
+  margin-top: 5px;
+}
+
+/* Outcome prompt */
+.fitcheck-panel__outcomes-prompt {
+  margin: 0 0 8px;
+  color: #5d6a5f;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .fitcheck-panel__details {
@@ -162,15 +210,6 @@
 
 .fitcheck-panel__details p {
   margin: 0 0 10px;
-}
-
-.fitcheck-panel__details ul {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.fitcheck-panel__details li + li {
-  margin-top: 6px;
 }
 
 .fitcheck-panel__details dl,
@@ -200,11 +239,15 @@
   overflow-wrap: anywhere;
 }
 
+/* Outcomes section */
 .fitcheck-panel__outcomes {
+  margin-top: 12px;
+}
+
+.fitcheck-panel__outcomes-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 12px;
 }
 
 .fitcheck-panel__note {
@@ -243,7 +286,7 @@
   grid-column: 1 / -1;
 }
 
-.fitcheck-panel__outcomes button,
+.fitcheck-panel__outcomes-grid button,
 .fitcheck-panel__footer button {
   display: inline-flex;
   align-items: center;
@@ -270,7 +313,7 @@
 }
 
 .fitcheck-panel__footer button:disabled,
-.fitcheck-panel__outcomes button:disabled {
+.fitcheck-panel__outcomes-grid button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
 }

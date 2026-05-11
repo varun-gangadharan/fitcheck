@@ -340,7 +340,7 @@ function flattenGraph(value) {
 }
 
 function getVisibleText(documentRef) {
-  return cleanMultiline(documentRef?.body?.innerText || documentRef?.body?.textContent || "");
+  return cleanMultiline(documentRef?.body?.textContent || "");
 }
 
 function findNearbyText(text, keywords) {

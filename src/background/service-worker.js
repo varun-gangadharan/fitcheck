@@ -48,6 +48,7 @@ async function analyzeProduct(product) {
       brandMemory,
       history,
       options: {
+        analysisMode: config.analysisMode || "rules_only",
         webEvidenceEnabled: Boolean(config.webEvidenceEnabled),
         searchProvider: config.searchProvider || "firecrawl"
       }

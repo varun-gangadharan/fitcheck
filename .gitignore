@@ -1,3 +1,4 @@
 .env
 .firecrawl/
+.fitcheck-cache/
 node_modules/

@@ -49,11 +49,12 @@ export async function callModel(prompt, options = {}) {
   const result = await response.json();
   const raw = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   try {
     return {
       status: "ok",
       reason: "",
-      output: JSON.parse(raw)
+      output: JSON.parse(cleaned)
     };
   } catch (_error) {
     return {

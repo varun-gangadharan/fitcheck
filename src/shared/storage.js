@@ -46,7 +46,7 @@ export async function saveConfig(config) {
     analysisMode: config.analysisMode || DEFAULT_CONFIG.analysisMode,
     webEvidenceEnabled: Boolean(config.webEvidenceEnabled),
     searchProvider: config.searchProvider || DEFAULT_CONFIG.searchProvider,
-    geminiApiKey: String(config.geminiApiKey ?? DEFAULT_CONFIG.geminiApiKey)
+    // geminiApiKey is intentionally excluded — it lives in the server's env only
   });
 }
 

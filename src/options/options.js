@@ -25,7 +25,6 @@ async function init() {
   form.elements.apiUrl.value = config.apiUrl;
   form.elements.searchProvider.value = config.searchProvider || "firecrawl";
   form.elements.analysisMode.value = config.analysisMode || "rules_only";
-  form.elements.geminiApiKey.value = config.geminiApiKey || "";
   updateModeUI();
   renderBrandNotes(brandNotes);
 }
@@ -79,7 +78,7 @@ form.addEventListener("submit", async (event) => {
       analysisMode: mode,
       webEvidenceEnabled: mode === "rules_plus_web" || mode === "model_assisted",
       searchProvider: clean(data.get("searchProvider")) || "firecrawl",
-      geminiApiKey: clean(data.get("geminiApiKey"))
+      // geminiApiKey excluded — configured via GEMINI_API_KEY env var on the server
     });
     setStatus("Profile saved.");
   } catch (_error) {
