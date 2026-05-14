@@ -14,7 +14,7 @@ export const DEFAULT_CACHE_DIR = ".fitcheck-cache";
  */
 export function createStore(dirPath) {
   try {
-    mkdirSync(dirPath, { recursive: true });
+    mkdirSync(dirPath, { recursive: true, mode: 0o700 });
   } catch (_error) {
     // Directory already exists or cannot be created — handled at write time.
   }
@@ -34,7 +34,7 @@ export function createStore(dirPath) {
 
   function writeJson(filename, data) {
     try {
-      writeFileSync(join(dirPath, filename), JSON.stringify(data, null, 2), "utf8");
+      writeFileSync(join(dirPath, filename), JSON.stringify(data, null, 2), { encoding: "utf8", mode: 0o600 });
     } catch (error) {
       console.warn(`[fitcheck] cache write failed (${filename}): ${error.message}`);
     }

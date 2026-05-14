@@ -162,6 +162,19 @@ By default, the local API running on `127.0.0.1` does not require an API token. 
 
 ---
 
+## Security Model
+
+- The extension injects only after explicit user invocation from the toolbar.
+- The local API binds to `127.0.0.1` by default and rejects non-local socket connections.
+- Browser-origin requests to the local API are limited by default to Chrome extension origins and localhost origins.
+- You can explicitly lock CORS to one or more published origins with `FITCHECK_ALLOWED_ORIGIN`.
+- Remote API endpoints must use `https://`. Plain `http://` is only allowed for localhost.
+- The local API does not require a Bearer token by default for personal localhost use. To protect a shared or hosted deployment, set `FITCHECK_REQUIRE_API_TOKEN=true`.
+- Request bodies are capped to reduce memory-abuse risk.
+- Local token and cache files are written with restrictive filesystem permissions where supported by the OS.
+
+---
+
 ## Local Persistence
 
 ### chrome.storage.local (extension)

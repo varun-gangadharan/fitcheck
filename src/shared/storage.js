@@ -1,5 +1,6 @@
 import { CURRENT_SCHEMA_VERSION, DEFAULT_PROFILE, EMPTY_BRAND_NOTE, STORAGE_KEYS } from "./models.js";
 import { DEFAULT_CONFIG } from "./config.js";
+import { normalizeApiUrl } from "./security.js";
 
 function chromeStorageArea() {
   if (!globalThis.chrome?.storage?.local) {
@@ -42,7 +43,7 @@ export async function saveConfig(config) {
   return setValue(STORAGE_KEYS.config, {
     ...DEFAULT_CONFIG,
     ...config,
-    apiUrl: String(config.apiUrl || DEFAULT_CONFIG.apiUrl).replace(/\/+$/, ""),
+    apiUrl: normalizeApiUrl(config.apiUrl || DEFAULT_CONFIG.apiUrl, DEFAULT_CONFIG.apiUrl),
     apiToken: String(config.apiToken || "").trim(),
     analysisMode: config.analysisMode || DEFAULT_CONFIG.analysisMode,
     webEvidenceEnabled: Boolean(config.webEvidenceEnabled),

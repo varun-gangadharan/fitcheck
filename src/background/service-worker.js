@@ -7,6 +7,7 @@ import {
   updateBrandMemoryFromOutcome
 } from "../shared/storage.js";
 import { analyzeFit } from "../backend/recommendation-engine.js";
+import { normalizeApiUrl } from "../shared/security.js";
 
 const CONTENT_SCRIPT_FILE = "src/content/content-script.js";
 
@@ -156,10 +157,11 @@ async function saveOutcome(record) {
 }
 
 async function requestAnalysis(apiUrl, payload, apiToken) {
+  const normalizedApiUrl = normalizeApiUrl(apiUrl);
   const headers = { "content-type": "application/json" };
   if (apiToken) headers["authorization"] = `Bearer ${apiToken}`;
 
-  const response = await fetch(`${String(apiUrl).replace(/\/+$/, "")}/analyze`, {
+  const response = await fetch(`${normalizedApiUrl}/analyze`, {
     method: "POST",
     headers,
     body: JSON.stringify(payload)
@@ -187,6 +189,9 @@ function isNetworkError(error) {
 
 function friendlyError(error) {
   const msg = error.message || "";
+  if (/API URL must|Remote API URLs must use https|embedded credentials|query parameters or fragments/i.test(msg)) {
+    return msg;
+  }
   if (/Cannot access|Cannot inject|Missing host permission|chrome:\/\/|Edge Add-ons/i.test(msg)) {
     return "Fitcheck can only run on normal shopping pages after you open it from the toolbar.";
   }

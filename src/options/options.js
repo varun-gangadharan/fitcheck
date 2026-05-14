@@ -88,8 +88,8 @@ form.addEventListener("submit", async (event) => {
       // geminiApiKey excluded — configured via GEMINI_API_KEY env var on the server
     });
     setStatus("Profile saved.");
-  } catch (_error) {
-    setStatus("Could not save profile locally.");
+  } catch (error) {
+    setStatus(error?.message || "Could not save profile locally.");
     return;
   }
 

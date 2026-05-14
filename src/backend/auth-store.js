@@ -16,7 +16,7 @@ function tokensFile() {
   const dir = process.env.FITCHECK_CACHE_DIR
     ? process.env.FITCHECK_CACHE_DIR
     : join(process.cwd(), ".fitcheck-cache");
-  mkdirSync(dir, { recursive: true });
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
   return join(dir, "tokens.json");
 }
 
@@ -29,7 +29,7 @@ function load() {
 }
 
 function save(tokens) {
-  writeFileSync(tokensFile(), JSON.stringify(tokens, null, 2), "utf8");
+  writeFileSync(tokensFile(), JSON.stringify(tokens, null, 2), { encoding: "utf8", mode: 0o600 });
 }
 
 function today() {

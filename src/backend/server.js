@@ -5,6 +5,11 @@ import { runAnalysis } from "./analysis-orchestrator.js";
 import { validateAnalyzeRequest } from "./validation.js";
 import { checkAuth } from "./auth-middleware.js";
 import { recordUsage } from "./auth-store.js";
+import {
+  isAllowedRequestOrigin,
+  isLocalRequestAddress,
+  MAX_ANALYZE_REQUEST_BYTES
+} from "../shared/security.js";
 
 loadEnvFile();
 initEvidenceStore();
@@ -12,12 +17,15 @@ initEvidenceStore();
 const PORT = Number.parseInt(process.env.FITCHECK_API_PORT || "8787", 10);
 const HOST = process.env.FITCHECK_API_HOST || "127.0.0.1";
 
-// chrome-extension://EXTENSION_ID — set this in production to lock CORS to
-// your published extension. Defaults to * (open) for local development.
-const ALLOWED_ORIGIN = process.env.FITCHECK_ALLOWED_ORIGIN || "*";
+// Set FITCHECK_ALLOWED_ORIGIN to a comma-separated list to explicitly lock CORS.
+// Without it, only Chrome extension origins and localhost browser origins are allowed.
+const ALLOWED_ORIGINS = String(process.env.FITCHECK_ALLOWED_ORIGIN || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean);
 
 const server = http.createServer(async (request, response) => {
-  if (!isLocalRequest(request.socket.remoteAddress)) {
+  if (!isLocalRequestAddress(request.socket.remoteAddress)) {
     sendJson(response, 403, {
       error: "forbidden",
       message: "Fitcheck API only accepts localhost connections."
@@ -26,6 +34,13 @@ const server = http.createServer(async (request, response) => {
   }
 
   const requestOrigin = request.headers["origin"] || "";
+  if (!isAllowedRequestOrigin(requestOrigin, ALLOWED_ORIGINS)) {
+    sendJson(response, 403, {
+      error: "forbidden_origin",
+      message: "This origin is not allowed to access the Fitcheck API."
+    });
+    return;
+  }
   setCorsHeaders(response, requestOrigin);
 
   if (request.method === "OPTIONS") {
@@ -84,16 +99,26 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`Fitcheck API listening on http://${HOST}:${PORT}`);
-  if (ALLOWED_ORIGIN === "*") {
-    console.warn("  CORS: open (*) — set FITCHECK_ALLOWED_ORIGIN in production.");
+  if (!ALLOWED_ORIGINS.length) {
+    console.log("  CORS: allowing Chrome extension origins and localhost origins.");
   } else {
-    console.log(`  CORS: locked to ${ALLOWED_ORIGIN}`);
+    console.log(`  CORS: locked to ${ALLOWED_ORIGINS.join(", ")}`);
   }
 });
 
 async function readJson(request) {
   const chunks = [];
-  for await (const chunk of request) chunks.push(chunk);
+  let total = 0;
+  for await (const chunk of request) {
+    total += chunk.length;
+    if (total > MAX_ANALYZE_REQUEST_BYTES) {
+      const error = new Error(`Request body exceeds ${MAX_ANALYZE_REQUEST_BYTES} bytes.`);
+      error.statusCode = 413;
+      error.code = "payload_too_large";
+      throw error;
+    }
+    chunks.push(chunk);
+  }
   try {
     return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
   } catch {
@@ -105,13 +130,11 @@ async function readJson(request) {
 }
 
 function setCorsHeaders(response, requestOrigin) {
-  const allow = ALLOWED_ORIGIN === "*"
-    ? "*"
-    : requestOrigin === ALLOWED_ORIGIN ? requestOrigin : null;
+  const allow = isAllowedRequestOrigin(requestOrigin, ALLOWED_ORIGINS) ? requestOrigin : null;
 
   if (allow) {
     response.setHeader("Access-Control-Allow-Origin", allow);
-    if (allow !== "*") response.setHeader("Vary", "Origin");
+    response.setHeader("Vary", "Origin");
   }
   response.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   response.setHeader("Access-Control-Allow-Headers", "content-type,authorization");
@@ -120,8 +143,4 @@ function setCorsHeaders(response, requestOrigin) {
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, { "content-type": "application/json" });
   response.end(JSON.stringify(payload));
-}
-
-function isLocalRequest(remoteAddress = "") {
-  return ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(remoteAddress);
 }
